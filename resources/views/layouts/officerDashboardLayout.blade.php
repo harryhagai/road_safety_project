@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Road Officer Dashboard | Road Safety Reporting System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{{ asset('css/aHeader.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/aSidebar.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/aDashboardLayout.css') }}" rel="stylesheet">
+    @stack('styles')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body data-disable-navigation-overlay="1">
+    @php
+        $academicPageHeader = match (true) {
+            request()->is('road-officer/dashboard') || request()->is('academic/dashboard') => [
+                'title' => 'Road Officer Dashboard',
+                'subtitle' => 'Monitor reports, violations, rules, and hotspot activity from one workspace.',
+            ],
+            request()->is('road-officer/reports*') || request()->is('academic/results-overview') => [
+                'title' => 'Incident Reports',
+                'subtitle' => 'Review submitted cases, progress updates, and field reporting activity.',
+            ],
+            request()->is('road-officer/road-rules*') || request()->is('academic/examinations*') => [
+                'title' => 'Road Rules',
+                'subtitle' => 'Manage active road rules, enforcement details, and effective periods.',
+            ],
+            request()->is('road-officer/road-segments*') || request()->is('academic/classes*') => [
+                'title' => 'Road Segments',
+                'subtitle' => 'Maintain mapped road segments, boundary details, and segment descriptions.',
+            ],
+            request()->is('road-officer/violation-types*') || request()->is('academic/olevel-subject-management*') || request()->is('academic/alevel-subjects*') => [
+                'title' => 'Violation Types',
+                'subtitle' => 'Manage report categories used for road incidents and traffic violations.',
+            ],
+            request()->is('road-officer/evidence-files*') || request()->is('student-reports/class*') => [
+                'title' => 'Evidence Files',
+                'subtitle' => 'Browse attachments, media records, and supporting files linked to reports.',
+            ],
+            request()->is('road-officer/rule-violations*') || request()->is('student-reports/single-exam*') => [
+                'title' => 'Rule Violations',
+                'subtitle' => 'Match reports to rules, review verification status, and confirm enforcement actions.',
+            ],
+            request()->is('road-officer/hotspots*') || request()->is('academic/consolidated/results*') => [
+                'title' => 'Hotspots',
+                'subtitle' => 'Track dangerous areas, severity trends, and recurring incident locations.',
+            ],
+            request()->is('road-officer/officers*') || request()->is('academic/teachers*') => [
+                'title' => 'Officers',
+                'subtitle' => 'Manage officer accounts, roles, and operational access across the system.',
+            ],
+            request()->is('road-officer/notifications*') || request()->is('academic/notifications*') => [
+                'title' => 'Notifications',
+                'subtitle' => 'Review alerts, assignment updates, and workflow messages for road officers.',
+            ],
+            request()->is('road-officer/settings*') || request()->is('academic/settings*') => [
+                'title' => 'Officer Settings',
+                'subtitle' => 'Adjust road safety workflow preferences, alert behavior, and dashboard settings.',
+            ],
+            request()->is('road-officer/profile*') || request()->is('academic/profile*') => [
+                'title' => 'Officer Profile',
+                'subtitle' => 'Manage your account information and profile details.',
+            ],
+            default => [
+                'title' => 'Road Officer Workspace',
+                'subtitle' => 'Manage road safety reporting operations from one place.',
+            ],
+        };
+    @endphp
+
+    @include('components.academicHeader')
+    @include('components.academicSidebar')
+
+    <div class="academic-page-content pb-5" @if($academicPageHeader) data-academic-page-header="true" @endif>
+        @if ($academicPageHeader)
+            <div class="px-3 px-lg-4 pt-4">
+                <x-academic-page-header :title="$academicPageHeader['title']" :subtitle="$academicPageHeader['subtitle']" />
+            </div>
+        @endif
+
+        <div class="academic-page-body">
+            @yield('content')
+        </div>
+    </div>
+
+    <footer id="dashboardFooter" class="fixed-bottom text-center text-muted small py-3 bg-white border-top px-3">
+        <span>© 2025 Henry Gogarty | road officer dashboard V 1.0 | developed by HN</span>
+    </footer>
+
+    <style>
+        .academic-shared-page-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 1rem;
+            padding: 0.25rem 0 1.1rem;
+            margin-bottom: 1.2rem;
+            border-bottom: 1px solid #e6eefb;
+        }
+        .academic-shared-page-header__title {
+            margin: 0;
+            font-size: clamp(1.35rem, 1.5vw, 1.8rem);
+            line-height: 1.2;
+            font-weight: 700;
+            color: #0d6efd;
+        }
+        .academic-shared-page-header__subtitle {
+            max-width: 720px;
+            margin: 0.35rem 0 0;
+            color: #5f7698;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .academic-page-content[data-academic-page-header="true"] .academic-page-body > .container:first-child > :is(h1, h2, h3, h4):first-child,
+        .academic-page-content[data-academic-page-header="true"] .academic-page-body > .container-fluid:first-child > :is(h1, h2, h3, h4):first-child {
+            display: none !important;
+        }
+        .academic-page-content[data-academic-page-header="true"] .academic-page-body > .container:first-child > .d-flex:first-child > :is(h1, h2, h3, h4):first-child,
+        .academic-page-content[data-academic-page-header="true"] .academic-page-body > .container-fluid:first-child > .d-flex:first-child > :is(h1, h2, h3, h4):first-child {
+            display: none !important;
+        }
+        #dashboardFooter {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+        body.sidebar-collapsed #dashboardFooter {
+            margin-left: var(--sidebar-collapsed-width);
+            width: calc(100% - var(--sidebar-collapsed-width));
+        }
+        @media (max-width: 768px) {
+            .academic-shared-page-header {
+                padding-bottom: 1rem;
+            }
+            .academic-shared-page-header__subtitle {
+                font-size: 0.92rem;
+            }
+            #dashboardFooter {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+            .pb-5 {
+                padding-bottom: 5rem !important;
+            }
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('js/academicSidebarToggler.js') }}"></script>
+    <script src="{{ asset('js/buttonSpinner.js') }}"></script>
+    <script src="{{ asset('js/academicAlertTheme.js') }}"></script>
+    @yield('scripts')
+
+    @if (session('success') && ! View::hasSection('disable_success_swal'))
+        <script>
+            showAcademicUiAlert({
+                theme: 'success',
+                title: 'Action completed',
+                text: @js(session('success')),
+                timer: 2600,
+                showConfirmButton: false
+            });
+        </script>
+    @endif
+
+    @if (session('error'))
+        <script>
+            showAcademicUiAlert({
+                theme: 'danger',
+                title: 'Something went wrong',
+                text: @js(session('error')),
+                showConfirmButton: true,
+                confirmButtonText: '<i class="bi bi-arrow-repeat me-1"></i> OK'
+            });
+        </script>
+    @endif
+
+    @stack('scripts')
+    <script src="/teacherClassAssignment.js"></script>
+</body>
+</html>

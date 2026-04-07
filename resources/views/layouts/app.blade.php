@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@yield('title', 'Henry Application')</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+
+
+    <!-- Custom CSS -->
+    <link href="{{ asset('css/header.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/footer.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/home.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/login.css') }}" rel="stylesheet">
+    <style>
+        :root {
+            --font-heading: "Segoe UI", "Trebuchet MS", Verdana, sans-serif;
+            --font-body: "Segoe UI", "Trebuchet MS", Verdana, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-body);
+        }
+
+        h1,h2,h3,h4,h5, h6,
+        .section-title,
+        .hero-title,
+        .header-name {
+            font-family: var(--font-heading);
+        }
+
+        .btn {
+            font-family: var(--font-heading);
+        }
+
+        p, li,a, span, input, select,textarea, label,
+        small {
+            font-family: var(--font-body);
+        }
+    </style>
+
+</head>
+
+<body data-disable-navigation-overlay="1" data-inline-spinner-links="1" data-inline-spinner-theme="blue">
+    @include('components.header')
+
+
+    @yield('content')
+
+    @include('components.footer')
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="{{ asset('js/header.js') }}"></script>
+    <script src="{{ asset('js/buttonSpinner.js') }}"></script>
+    @yield('scripts')
+
+</body>
+
+</html>
