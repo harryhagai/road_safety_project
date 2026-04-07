@@ -44,19 +44,19 @@
                     <ul class="nav flex-column">
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/road-rules') }}"
-                                class="nav-link {{ request()->is('road-officer/road-rules*') ? 'active bg-primary text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/road-rules*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Road Rules
                             </a>
                         </li>
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/road-segments') }}"
-                                class="nav-link {{ request()->is('road-officer/road-segments*') ? 'active bg-primary text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/road-segments*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Road Segments
                             </a>
                         </li>
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/violation-types') }}"
-                                class="nav-link {{ request()->is('road-officer/violation-types*') ? 'active bg-primary text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/violation-types*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Violation Types
                             </a>
                         </li>
@@ -79,19 +79,19 @@
                     <ul class="nav flex-column">
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/reports') }}"
-                                class="nav-link {{ request()->is('road-officer/reports*') ? 'active bg-primary text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/reports*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Incident Reports
                             </a>
                         </li>
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/evidence-files') }}"
-                                class="nav-link {{ request()->is('road-officer/evidence-files*') ? 'active bg-primary text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/evidence-files*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Evidence Files
                             </a>
                         </li>
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/rule-violations') }}"
-                                class="nav-link {{ request()->is('road-officer/rule-violations*') ? 'active bg-primary text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/rule-violations*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Rule Violations
                             </a>
                         </li>
@@ -114,7 +114,7 @@
                     <ul class="nav flex-column">
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/hotspots') }}"
-                                class="nav-link {{ request()->is('road-officer/hotspots*') ? 'active bg-primary text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/hotspots*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Hotspots
                             </a>
                         </li>
@@ -143,19 +143,19 @@
                     <ul class="nav flex-column">
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/officers') }}"
-                                class="nav-link {{ request()->is('road-officer/officers*') ? 'active bg-info text-white fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/officers*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Officers
                             </a>
                         </li>
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/settings') }}"
-                                class="nav-link {{ request()->is('road-officer/settings*') ? 'active bg-warning text-dark fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/settings*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> Settings
                             </a>
                         </li>
                         <li class="nav-item mb-1">
                             <a href="{{ url('/road-officer/profile') }}"
-                                class="nav-link {{ request()->is('road-officer/profile*') ? 'active bg-warning text-dark fw-bold shadow-sm' : '' }}">
+                                class="nav-link academic-sidebar-sub-link {{ request()->is('road-officer/profile*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-dot"></i> My Profile
                             </a>
                         </li>

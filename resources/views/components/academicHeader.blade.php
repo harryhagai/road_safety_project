@@ -30,7 +30,7 @@
                 aria-expanded="false"
                 title="Quick Access"
             >
-                <i class="bi bi-grid text-primary"></i>
+                <i class="bi bi-grid header-theme-icon"></i>
             </button>
             <div class="dropdown-menu dropdown-menu-end shadow-sm p-0 overflow-hidden quick-access-menu" aria-labelledby="quickAccessDropdown">
                 <div class="px-3 py-2 border-bottom bg-light">
@@ -39,23 +39,23 @@
                 </div>
                 <div class="py-2">
                     <a href="{{ url('/road-officer/dashboard') }}" class="dropdown-item d-flex align-items-center gap-2 py-2">
-                        <i class="bi bi-speedometer2 text-primary"></i>
+                        <i class="bi bi-speedometer2 header-theme-icon"></i>
                         <span>Dashboard</span>
                     </a>
                     <a href="{{ url('/road-officer/reports') }}" class="dropdown-item d-flex align-items-center gap-2 py-2">
-                        <i class="bi bi-flag text-primary"></i>
+                        <i class="bi bi-flag header-theme-icon"></i>
                         <span>Reports</span>
                     </a>
                     <a href="{{ url('/road-officer/road-rules') }}" class="dropdown-item d-flex align-items-center gap-2 py-2">
-                        <i class="bi bi-sign-turn-right text-primary"></i>
+                        <i class="bi bi-sign-turn-right header-theme-icon"></i>
                         <span>Road Rules</span>
                     </a>
                     <a href="{{ url('/road-officer/hotspots') }}" class="dropdown-item d-flex align-items-center gap-2 py-2">
-                        <i class="bi bi-geo-alt text-primary"></i>
+                        <i class="bi bi-geo-alt header-theme-icon"></i>
                         <span>Hotspots</span>
                     </a>
                     <a href="{{ url('/road-officer/settings') }}" class="dropdown-item d-flex align-items-center gap-2 py-2">
-                        <i class="bi bi-sliders text-primary"></i>
+                        <i class="bi bi-sliders header-theme-icon"></i>
                         <span>Settings</span>
                     </a>
                 </div>
@@ -70,7 +70,7 @@
                 data-bs-toggle="dropdown"
                 aria-expanded="false"
             >
-                <i class="bi bi-bell fs-5 text-primary notification-trigger-icon"></i>
+                <i class="bi bi-bell fs-5 notification-trigger-icon"></i>
                 <span id="notificationBadge" class="notification-badge badge rounded-pill bg-danger {{ $headerUnreadCount > 0 ? '' : 'd-none' }}">
                     {{ $headerUnreadCount > 9 ? '9+' : $headerUnreadCount }}
                 </span>
@@ -98,7 +98,7 @@
                                     <div class="text-muted small mb-1 notification-message">{{ $notification->message }}</div>
                                     <div class="small text-muted notification-time">{{ $notification->created_at->diffForHumans() }}</div>
                                 </div>
-                                <span class="badge notification-status {{ $notification->status === 'unread' ? 'bg-primary' : 'bg-secondary' }}">
+                                <span class="badge notification-status {{ $notification->status === 'unread' ? 'notification-status-unread' : 'notification-status-read' }}">
                                     {{ ucfirst($notification->status) }}
                                 </span>
                             </div>
@@ -111,7 +111,7 @@
                     @endforelse
                 </div>
                 <div class="notification-menu-footer px-3 py-2 border-top text-end">
-                    <a href="{{ url('/road-officer/notifications') }}" class="btn btn-sm btn-outline-primary" id="notificationViewAllLink">
+                    <a href="{{ url('/road-officer/notifications') }}" class="btn btn-sm notification-view-all-btn" id="notificationViewAllLink">
                         View all
                     </a>
                 </div>
@@ -123,14 +123,14 @@
                 @if(!empty($currentOfficer?->passport))
                     <img src="{{ asset('storage/' . $currentOfficer->passport) }}" alt="Profile Picture" class="profile-avatar" />
                 @else
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($officerDisplayName) }}&background=0f5d73&color=fff&size=40" alt="Profile Picture" class="profile-avatar" />
+                    <img src="https://ui-avatars.com/api/?name={{ urlencode($officerDisplayName) }}&background=1098d4&color=fff&size=40" alt="Profile Picture" class="profile-avatar" />
                 @endif
                 <span class="ms-2 d-none d-md-inline fw-normal">{{ $officerDisplayName }}</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                 <li>
                     <a class="dropdown-item d-flex align-items-center" href="{{ url('/road-officer/profile') }}">
-                        <i class="bi bi-person-fill text-primary me-2"></i> My Profile
+                        <i class="bi bi-person-fill header-theme-icon me-2"></i> My Profile
                     </a>
                 </li>
                 <li><hr class="dropdown-divider"></li>
@@ -197,7 +197,7 @@
                             <div class="text-muted small mb-1 notification-message">${escapeHtml(notification.message)}</div>
                             <div class="small text-muted notification-time">${escapeHtml(notification.time)}</div>
                         </div>
-                        <span class="badge notification-status ${notification.status === 'unread' ? 'bg-primary' : 'bg-secondary'}">
+                        <span class="badge notification-status ${notification.status === 'unread' ? 'notification-status-unread' : 'notification-status-read'}">
                             ${escapeHtml(notification.status_label)}
                         </span>
                     </div>
