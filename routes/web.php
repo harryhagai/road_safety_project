@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\MapController;
-use App\Http\Controllers\OfficerNotificationController;
-use App\Http\Controllers\OfficerProfileController;
+use App\Http\Controllers\officer\OfficerNotificationController;
+use App\Http\Controllers\officer\OfficerProfileController;
+use App\Http\Controllers\officer\RoadSegmentController;
+use App\Http\Controllers\officer\RoadRuleController;
 use Illuminate\Support\Facades\Route;
 
 $routeFiles = [
@@ -44,8 +46,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/road-officer/notifications/dropdown-data', [OfficerNotificationController::class, 'dropdownData'])->name('officer.notifications.dropdown-data');
     Route::post('/road-officer/notifications/mark-all-read', [OfficerNotificationController::class, 'markAllRead'])->name('officer.notifications.mark-all-read');
     Route::get('/road-officer/notifications/{notificationId}', [OfficerNotificationController::class, 'show'])->name('officer.notifications.show');
-    Route::get('/road-officer/road-segments', [MapController::class, 'lab'])->name('officer.road-segments.index');
-    Route::get('/road-officer/road-segments/map-lab', [MapController::class, 'lab'])->name('officer.road-segments.map-lab');
+    Route::get('/road-officer/road-rules', [RoadRuleController::class, 'index'])->name('officer.road-rules.index');
+    Route::post('/road-officer/road-rules', [RoadRuleController::class, 'store'])->name('officer.road-rules.store');
+    Route::get('/road-officer/road-segments', [RoadSegmentController::class, 'index'])->name('officer.road-segments.index');
+    Route::post('/road-officer/road-segments', [RoadSegmentController::class, 'store'])->name('officer.road-segments.store');
     Route::get('/road-officer/profile', [OfficerProfileController::class, 'show'])->name('officer.profile.show');
     Route::put('/road-officer/profile', [OfficerProfileController::class, 'update'])->name('officer.profile.update');
 });

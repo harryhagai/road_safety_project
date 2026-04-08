@@ -80,7 +80,17 @@
     <main class="officer-page-content" @if($academicPageHeader) data-officer-page-header="true" @endif>
         @if ($academicPageHeader)
             <div class="px-3 px-lg-4 pt-4">
-                <x-officer-page-header :title="$academicPageHeader['title']" :subtitle="$academicPageHeader['subtitle']" />
+                <section class="officer-shared-page-header">
+                    <div class="officer-shared-page-header__content">
+                        <x-officer-page-header :title="$academicPageHeader['title']" :subtitle="$academicPageHeader['subtitle']" />
+                    </div>
+
+                    @hasSection('page_header_actions')
+                        <div class="officer-shared-page-header__actions">
+                            @yield('page_header_actions')
+                        </div>
+                    @endif
+                </section>
             </div>
         @endif
 
@@ -93,11 +103,22 @@
         .officer-shared-page-header {
             display: flex;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: space-between;
             gap: 1rem;
             padding: 0.25rem 0 1.1rem;
             margin-bottom: 1.2rem;
             border-bottom: 1px solid rgba(35, 44, 58, 0.14);
+        }
+        .officer-shared-page-header__content {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
+        .officer-shared-page-header__actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            flex-shrink: 0;
         }
         .officer-shared-page-header__title {
             margin: 0;
@@ -123,7 +144,13 @@
         }
         @media (max-width: 768px) {
             .officer-shared-page-header {
+                flex-direction: column;
+                align-items: stretch;
                 padding-bottom: 1rem;
+            }
+            .officer-shared-page-header__actions {
+                justify-content: flex-start;
+                flex-wrap: wrap;
             }
             .officer-shared-page-header__subtitle {
                 font-size: 0.92rem;

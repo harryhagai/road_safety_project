@@ -128,6 +128,314 @@
     margin-bottom: 0;
 }
 
+.geo-header-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.7rem 0.95rem;
+    border-radius: 14px;
+    border: 1px solid rgba(31, 49, 79, 0.12);
+    background: #1f314f;
+    color: #fff;
+    font-weight: 400;
+    box-shadow: 0 10px 22px rgba(31, 49, 79, 0.12);
+}
+
+.geo-header-btn:hover,
+.geo-header-btn:focus {
+    background: #182843;
+    color: #fff;
+}
+
+.geo-header-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.geo-header-btn--light {
+    background: #fff;
+    color: #1f314f;
+    box-shadow: none;
+}
+
+.geo-header-btn--light:hover,
+.geo-header-btn--light:focus {
+    background: #f6f8fb;
+    color: #1f314f;
+}
+
+.geo-segment-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin: 0 1rem 1rem;
+    border: 1px solid rgba(31, 49, 79, 0.08);
+    border-radius: 18px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.geo-segment-list__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0.95rem;
+    border-bottom: 1px solid rgba(31, 49, 79, 0.08);
+    color: #66758b;
+    font-size: 0.78rem;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.geo-segment-list__count {
+    color: #1f314f;
+}
+
+.geo-segment-list__body {
+    min-height: 0;
+    max-height: 260px;
+    overflow: auto;
+}
+
+.geo-segment-item {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0.95rem;
+    border: 0;
+    border-bottom: 1px solid rgba(31, 49, 79, 0.08);
+    background: #fff;
+    text-align: left;
+}
+
+.geo-segment-item:hover {
+    background: #f8fbff;
+}
+
+.geo-segment-item__title {
+    color: #1f314f;
+    font-size: 0.96rem;
+    font-weight: 400;
+}
+
+.geo-segment-item__meta {
+    color: #6a778d;
+    font-size: 0.82rem;
+}
+
+.geo-segment-list__empty {
+    padding: 1rem;
+    color: #6a778d;
+    font-size: 0.88rem;
+}
+
+.geo-modal {
+    border: 1px solid rgba(31, 49, 79, 0.08);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(27, 34, 48, 0.18);
+}
+
+.geo-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: #fff;
+    border-bottom: 1px solid rgba(31, 49, 79, 0.08);
+}
+
+.geo-modal__title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.geo-modal__icon {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: rgba(31, 49, 79, 0.08);
+    color: #1f314f;
+    font-size: 1.05rem;
+}
+
+.geo-modal__title {
+    margin: 0;
+    color: #1f314f;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.geo-modal__subtitle {
+    margin-top: 0.15rem;
+    color: #6a778d;
+    font-size: 0.84rem;
+}
+
+.geo-modal__body {
+    padding: 1.25rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.geo-modal__body .form-label {
+    color: #516177;
+    font-weight: 400;
+    margin-bottom: 0.45rem;
+}
+
+.geo-modal__body .form-control,
+.geo-modal__body .form-select {
+    border-radius: 14px;
+    border-color: rgba(31, 49, 79, 0.14);
+    padding: 0.8rem 0.9rem;
+    color: #1f314f;
+}
+
+.geo-modal__body .form-control:focus,
+.geo-modal__body .form-select:focus {
+    border-color: rgba(31, 49, 79, 0.3);
+    box-shadow: 0 0 0 0.2rem rgba(31, 49, 79, 0.08);
+}
+
+.geo-modal__footer {
+    padding: 1rem 1.25rem 1.25rem;
+    border-top: 1px solid rgba(31, 49, 79, 0.08);
+    background: #fff;
+}
+
+.geo-modal__primary-btn,
+.geo-modal__secondary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 14px;
+    padding: 0.75rem 1rem;
+    font-weight: 400;
+}
+
+.geo-modal__primary-btn {
+    border: 1px solid #1f314f;
+    background: #1f314f;
+    color: #fff;
+}
+
+.geo-modal__primary-btn:hover,
+.geo-modal__primary-btn:focus {
+    background: #182843;
+    color: #fff;
+}
+
+.geo-modal__secondary-btn {
+    border: 1px solid rgba(31, 49, 79, 0.14);
+    background: #fff;
+    color: #1f314f;
+}
+
+.geo-geometry-preview {
+    min-height: 150px;
+    resize: none;
+}
+
+.geo-point-marker {
+    background: transparent;
+    border: 0;
+}
+
+.geo-point-marker__pin {
+    position: relative;
+    width: 28px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1f314f;
+    filter: drop-shadow(0 8px 14px rgba(31, 49, 79, 0.18));
+}
+
+.geo-point-marker__pin .bi {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.geo-point-marker__index {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #ffffff;
+    width: 16px;
+    text-align: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(15, 23, 42, 0.3);
+}
+
+.geo-point-marker--latest .geo-point-marker__pin {
+    color: #d9485f;
+    filter: drop-shadow(0 10px 16px rgba(217, 72, 95, 0.22));
+}
+
+.geo-point-marker--latest .geo-point-marker__index {
+    color: #fff7f8;
+}
+
+.geo-rule-segment-marker {
+    background: transparent;
+    border: 0;
+}
+
+.geo-rule-segment-marker__pin {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: rgba(31, 49, 79, 0.92);
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(31, 49, 79, 0.18);
+}
+
+.geo-rule-segment-marker__pin .bi {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.geo-rule-segment-tooltip {
+    min-width: 180px;
+}
+
+.geo-rule-segment-tooltip__title {
+    color: #1f314f;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+
+.geo-rule-segment-tooltip__meta {
+    margin-top: 0.2rem;
+    color: #6a778d;
+    font-size: 0.78rem;
+}
+
+.geo-rule-segment-tooltip__description {
+    margin-top: 0.35rem;
+    color: #4c5c73;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
 .leaflet-container {
     font: inherit;
 }

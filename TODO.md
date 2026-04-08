@@ -10,20 +10,20 @@
 - [x] Add environment/config entries for map and geocoding services
 
 ## Phase 2: Road Segmentation Module
-- [ ] Create CRUD routes and controller for road segments
-- [ ] Build UI to draw road segments on the map
-- [ ] Save segment boundary/polyline coordinates into the database
-- [ ] Support segment type, description, and estimated length
-- [ ] Show existing segments on the map with edit/delete actions
-- [ ] Validate geometry before saving
+- [x] Create CRUD routes and controller for road segments
+- [x] Build UI to draw road segments on the map
+- [x] Save segment boundary/polyline coordinates into the database
+- [x] Support segment type, description, and estimated length
+- [x] Show existing segments on the map with edit/delete actions
+- [x] Validate geometry before saving
 
 ## Phase 3: Road Rules Module
-- [ ] Create CRUD routes and controller for road rules
-- [ ] Link each road rule to a road segment
-- [ ] Add rule types such as speed limit, no parking, one way, school zone
-- [ ] Support rule start/end dates and active status
-- [ ] Build UI to place or attach rules on mapped segments
-- [ ] Add validation for rule values and location coverage
+- [x] Create CRUD routes and controller for road rules
+- [x] Link each road rule to a road segment
+- [x] Add rule types such as speed limit, no parking, one way, school zone
+- [x] Support rule start/end dates and active status
+- [x] Build UI to place or attach rules on mapped segments
+- [x] Add validation for rule values and location coverage
 
 ## Phase 4: Report Mapping and Matching
 - [ ] Add report map picker for anonymous reporting

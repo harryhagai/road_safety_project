@@ -1,6 +1,7 @@
 (function () {
     function bindMap(root) {
         const config = JSON.parse(root.dataset.mapConfig || '{}');
+        const mode = root.dataset.mapMode || 'picker';
         const shell = root.closest('[data-map-shell]');
         const coordinatesLabel = shell?.querySelector('[data-map-coordinates]');
         const recenterButton = shell?.querySelector('[data-map-recenter]');
@@ -56,10 +57,12 @@
         }
 
         async function handleSelection(lat, lng) {
-            if (!marker) {
-                marker = L.marker([lat, lng]).addTo(map);
-            } else {
-                marker.setLatLng([lat, lng]);
+            if (mode !== 'segment-builder') {
+                if (!marker) {
+                    marker = L.marker([lat, lng]).addTo(map);
+                } else {
+                    marker.setLatLng([lat, lng]);
+                }
             }
 
             updateCoordinateText(lat, lng);
@@ -76,15 +79,33 @@
                 if (locationTarget) {
                     locationTarget.textContent = result.display_name || 'No address description returned.';
                 }
+
+                map.fire('rsrs:location-resolved', {
+                    lat,
+                    lng,
+                    displayName: result.display_name || null,
+                    address: result.address || {},
+                });
             } catch (error) {
                 if (locationTarget) {
                     locationTarget.textContent = 'Location lookup failed. You can still continue with raw coordinates.';
                 }
+
+                map.fire('rsrs:location-resolved', {
+                    lat,
+                    lng,
+                    displayName: null,
+                    address: {},
+                });
             }
         }
 
         map.on('click', function (event) {
             handleSelection(event.latlng.lat, event.latlng.lng);
+            map.fire('rsrs:point-selected', {
+                lat: event.latlng.lat,
+                lng: event.latlng.lng,
+            });
         });
 
         recenterButton?.addEventListener('click', function () {
