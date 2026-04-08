@@ -13,14 +13,14 @@
 @endphp
 
 <aside id="sidebar">
-    <div class="p-3">
+    <div class="p-3 officer-sidebar-inner">
         <div class="officer-sidebar-brand mb-3">
             <div class="officer-sidebar-logo" aria-hidden="true">
                 <i class="bi bi-cone-striped officer-sidebar-logo-icon"></i>
             </div>
             <div class="officer-sidebar-brand-text">
                 <div class="officer-sidebar-brand-title">RSRS</div>
-                <div class="officer-sidebar-brand-subtitle">Road Officer Panel</div>
+                <div class="officer-sidebar-brand-subtitle">Officer Panel</div>
             </div>
         </div>
         <ul class="nav flex-column">
@@ -51,7 +51,7 @@
                             </a>
                         </li>
                         <li class="nav-item mb-1">
-                            <a href="{{ url('/road-officer/road-segments') }}"
+                            <a href="{{ route('officer.road-segments.index') }}"
                                 class="nav-link officer-sidebar-sub-link {{ request()->is('road-officer/road-segments*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-signpost-split"></i> Road Segments
                             </a>
@@ -165,5 +165,10 @@
                 </div>
             </li>
         </ul>
+
+        <div class="officer-sidebar-footer">
+            <div class="officer-sidebar-footer__copy">&copy; 2025 Road Safety System</div>
+            <div class="officer-sidebar-footer__collapsed-copy">@2025</div>
+        </div>
     </div>
 </aside>

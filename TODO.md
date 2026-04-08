@@ -1,13 +1,13 @@
 # Road Safety Project Implementation Phases
 
 ## Phase 1: Geospatial Foundation
-- [ ] Choose and configure the free map stack
-- [ ] Integrate Leaflet map into the Laravel frontend
-- [ ] Add a reusable map container/component for admin and public screens
-- [ ] Support coordinate picking from the map
-- [ ] Add reverse geocoding for location name lookup
-- [ ] Define a common GeoJSON-style structure for storing map shapes
-- [ ] Add environment/config entries for map and geocoding services
+- [x] Choose and configure the free map stack
+- [x] Integrate Leaflet map into the Laravel frontend
+- [x] Add a reusable map container/component for admin and public screens
+- [x] Support coordinate picking from the map
+- [x] Add reverse geocoding for location name lookup
+- [x] Define a common GeoJSON-style structure for storing map shapes
+- [x] Add environment/config entries for map and geocoding services
 
 ## Phase 2: Road Segmentation Module
 - [ ] Create CRUD routes and controller for road segments

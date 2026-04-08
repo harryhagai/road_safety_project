@@ -77,7 +77,7 @@
     @include('components.academicHeader')
     @include('components.officerSidebar')
 
-    <div class="officer-page-content pb-5" @if($academicPageHeader) data-officer-page-header="true" @endif>
+    <div class="officer-page-content" @if($academicPageHeader) data-officer-page-header="true" @endif>
         @if ($academicPageHeader)
             <div class="px-3 px-lg-4 pt-4">
                 <x-officer-page-header :title="$academicPageHeader['title']" :subtitle="$academicPageHeader['subtitle']" />
@@ -88,10 +88,6 @@
             @yield('content')
         </div>
     </div>
-
-    <footer id="dashboardFooter" class="fixed-bottom text-center text-muted small py-3 bg-white border-top px-3">
-        <span>© 2025 Henry Gogarty | road officer dashboard V 1.0 | developed by HN</span>
-    </footer>
 
     <style>
         .officer-shared-page-header {
@@ -125,28 +121,12 @@
         .officer-page-content[data-officer-page-header="true"] .officer-page-body > .container-fluid:first-child > .d-flex:first-child > :is(h1, h2, h3, h4):first-child {
             display: none !important;
         }
-        #dashboardFooter {
-            margin-left: var(--sidebar-width);
-            width: calc(100% - var(--sidebar-width));
-            transition: margin-left 0.3s ease, width 0.3s ease;
-        }
-        body.sidebar-collapsed #dashboardFooter {
-            margin-left: var(--sidebar-collapsed-width);
-            width: calc(100% - var(--sidebar-collapsed-width));
-        }
         @media (max-width: 768px) {
             .officer-shared-page-header {
                 padding-bottom: 1rem;
             }
             .officer-shared-page-header__subtitle {
                 font-size: 0.92rem;
-            }
-            #dashboardFooter {
-                margin-left: 0 !important;
-                width: 100% !important;
-            }
-            .pb-5 {
-                padding-bottom: 5rem !important;
             }
         }
     </style>

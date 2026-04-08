@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MapController;
 use App\Http\Controllers\OfficerProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,7 +34,13 @@ Route::view('/developer', 'developer')->name('developer');
 Route::view('/news-events', 'news_events')->name('news-events');
 Route::view('/road-officer/dashboard', 'officer.dashboard')->middleware('auth')->name('officer.dashboard');
 Route::view('/academic/dashboard', 'officer.dashboard')->middleware('auth')->name('academic.dashboard');
+Route::get('/maps/reverse-geocode', [MapController::class, 'reverseGeocode'])
+    ->middleware('throttle:30,1')
+    ->name('maps.reverse-geocode');
+
 Route::middleware('auth')->group(function () {
+    Route::get('/road-officer/road-segments', [MapController::class, 'lab'])->name('officer.road-segments.index');
+    Route::get('/road-officer/road-segments/map-lab', [MapController::class, 'lab'])->name('officer.road-segments.map-lab');
     Route::get('/road-officer/profile', [OfficerProfileController::class, 'show'])->name('officer.profile.show');
     Route::put('/road-officer/profile', [OfficerProfileController::class, 'update'])->name('officer.profile.update');
 });
