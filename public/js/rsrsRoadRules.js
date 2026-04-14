@@ -6,27 +6,47 @@
             return;
         }
 
+        const pageConfig = window.roadRulePage || {};
         const map = mapRoot.mapApi.map;
-        const segments = window.roadRulePage?.segments || [];
-        const rules = window.roadRulePage?.rules || [];
+        const dataUrl = pageConfig.dataUrl;
 
         const selectedSegmentPanel = document.getElementById('ruleSelectedSegmentPanel');
         const coveragePanel = document.getElementById('ruleCoveragePanel');
         const statusPanel = document.getElementById('ruleStatusPanel');
         const segmentSelect = document.getElementById('segment_id');
-        const ruleNameInput = document.getElementById('rule_name');
         const locationNameInput = document.getElementById('location_name');
         const modalElement = document.getElementById('createRoadRuleModal');
         const modalInstance = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+        const resultsList = document.getElementById('roadRuleResultsList');
+        const searchInput = document.getElementById('roadRuleSearchInput');
+        const resultsCount = document.getElementById('roadRuleResultsCount');
+        const loadMoreBtn = document.getElementById('roadRuleLoadMoreBtn');
 
         const segmentLayer = L.layerGroup().addTo(map);
         const segmentMarkerLayer = L.layerGroup().addTo(map);
-        let activeLayer = null;
-        let activeSegmentId = null;
+        const activeMatchLayer = L.layerGroup().addTo(map);
 
-        function createSegmentIcon() {
+        let renderedSegments = Array.isArray(pageConfig.segments) ? pageConfig.segments : [];
+        let activeSegmentId = null;
+        let activeRuleId = null;
+        let currentPage = Number(pageConfig.pagination?.current_page || 1);
+        let hasMorePages = Boolean(pageConfig.pagination?.has_more);
+        let currentSearch = '';
+        let searchDebounceHandle = null;
+        let requestSerial = 0;
+
+        function escapeHtml(value) {
+            return String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function createSegmentIcon(isActive) {
             return L.divIcon({
-                className: 'geo-rule-segment-marker',
+                className: `geo-rule-segment-marker${isActive ? ' is-active' : ''}`,
                 html: `
                     <div class="geo-rule-segment-marker__pin">
                         <i class="bi bi-signpost-split-fill"></i>
@@ -59,18 +79,36 @@
                 parts.push(`${Number(segment.length_km).toFixed(2)} km`);
             }
 
+            if (segment.road_rules_count) {
+                parts.push(`${segment.road_rules_count} rule${segment.road_rules_count === 1 ? '' : 's'}`);
+            }
+
             return parts.join(' | ') || 'General segment';
+        }
+
+        function formatRuleMeta(rule) {
+            const parts = [];
+
+            if (rule.rule_type) {
+                parts.push(String(rule.rule_type).replace(/_/g, ' '));
+            }
+
+            if (rule.rule_value) {
+                parts.push(rule.rule_value);
+            }
+
+            return parts.join(' | ') || 'Saved road rule';
         }
 
         function buildTooltipContent(segment) {
             const description = segment.description
-                ? `<div class="geo-rule-segment-tooltip__description">${segment.description}</div>`
+                ? `<div class="geo-rule-segment-tooltip__description">${escapeHtml(segment.description)}</div>`
                 : '';
 
             return `
                 <div class="geo-rule-segment-tooltip">
-                    <div class="geo-rule-segment-tooltip__title">${segment.segment_name || 'Road segment'}</div>
-                    <div class="geo-rule-segment-tooltip__meta">${getSegmentSummary(segment)}</div>
+                    <div class="geo-rule-segment-tooltip__title">${escapeHtml(segment.segment_name || 'Road segment')}</div>
+                    <div class="geo-rule-segment-tooltip__meta">${escapeHtml(getSegmentSummary(segment))}</div>
                     ${description}
                 </div>
             `;
@@ -79,15 +117,13 @@
         function autoFillRuleForm(segment) {
             if (segmentSelect) {
                 segmentSelect.value = String(segment.id);
+                segmentSelect.dispatchEvent(new Event('change', { bubbles: true }));
             }
 
             if (locationNameInput && locationNameInput.dataset.autoFilled !== 'false') {
                 locationNameInput.value = segment.segment_name || '';
             }
 
-            if (ruleNameInput && ruleNameInput.dataset.autoFilled !== 'false') {
-                ruleNameInput.value = `${segment.segment_name || 'Road segment'} rule`;
-            }
         }
 
         function resetStyles() {
@@ -96,10 +132,33 @@
                     layer.setStyle({
                         color: '#7d8ca3',
                         weight: 4,
-                        opacity: 0.55,
+                        opacity: 0.48,
                     });
                 }
             });
+
+            segmentMarkerLayer.eachLayer((marker) => {
+                if (marker.segmentId !== undefined) {
+                    marker.setIcon(createSegmentIcon(Number(marker.segmentId) === Number(activeSegmentId)));
+                }
+            });
+        }
+
+        function updateResultSelectionState() {
+            document.querySelectorAll('[data-segment-id]').forEach((node) => {
+                const isSelected = Number(node.dataset.segmentId) === Number(activeSegmentId);
+                node.classList.toggle('is-selected', isSelected);
+            });
+
+            document.querySelectorAll('[data-road-rule]').forEach((node) => {
+                const rule = safeJsonParse(node.dataset.roadRule);
+                const isSelected = Number(rule?.id) === Number(activeRuleId);
+                node.classList.toggle('is-selected', isSelected);
+            });
+        }
+
+        function clearActiveMatchLayer() {
+            activeMatchLayer.clearLayers();
         }
 
         function applySegmentHoverState(segmentId) {
@@ -108,9 +167,21 @@
                     layer.setStyle({
                         color: '#d9485f',
                         weight: 5,
-                        opacity: 0.9,
+                        opacity: 0.95,
                     });
                 }
+            });
+
+            segmentMarkerLayer.eachLayer((marker) => {
+                if (marker.segmentId === Number(segmentId)) {
+                    marker.getElement()?.classList.add('is-hovered');
+                }
+            });
+        }
+
+        function clearMarkerHoverState() {
+            segmentMarkerLayer.eachLayer((marker) => {
+                marker.getElement()?.classList.remove('is-hovered');
             });
         }
 
@@ -127,6 +198,7 @@
         }
 
         function restoreSegmentVisualState() {
+            clearMarkerHoverState();
             resetStyles();
 
             if (activeSegmentId !== null) {
@@ -134,66 +206,20 @@
             }
         }
 
-        function renderSegments() {
-            segmentLayer.clearLayers();
-            segmentMarkerLayer.clearLayers();
+        function drawMatchGlow(segment) {
+            clearActiveMatchLayer();
 
-            segments.forEach((segment) => {
-                const latLngs = getSegmentLatLngs(segment);
+            const latLngs = getSegmentLatLngs(segment);
 
-                if (latLngs.length < 2) {
-                    return;
-                }
+            if (latLngs.length < 2) {
+                return;
+            }
 
-                const polyline = L.polyline(latLngs, {
-                    color: '#7d8ca3',
-                    weight: 4,
-                    opacity: 0.55,
-                }).addTo(segmentLayer);
-
-                polyline.segmentId = segment.id;
-                polyline.bindTooltip(buildTooltipContent(segment), {
-                    sticky: true,
-                    direction: 'top',
-                    opacity: 1,
-                });
-                polyline.on('mouseover', function () {
-                    restoreSegmentVisualState();
-                    applySegmentHoverState(segment.id);
-                });
-                polyline.on('mouseout', function () {
-                    restoreSegmentVisualState();
-                });
-                polyline.on('click', function () {
-                    highlightSegment(segment.id);
-                    autoFillRuleForm(segment);
-                    modalInstance?.show();
-                });
-
-                const center = L.latLngBounds(latLngs).getCenter();
-                const marker = L.marker(center, {
-                    icon: createSegmentIcon(),
-                }).addTo(segmentMarkerLayer);
-
-                marker.segmentId = segment.id;
-                marker.bindTooltip(buildTooltipContent(segment), {
-                    sticky: true,
-                    direction: 'top',
-                    opacity: 1,
-                });
-                marker.on('mouseover', function () {
-                    restoreSegmentVisualState();
-                    applySegmentHoverState(segment.id);
-                });
-                marker.on('mouseout', function () {
-                    restoreSegmentVisualState();
-                });
-                marker.on('click', function () {
-                    highlightSegment(segment.id);
-                    autoFillRuleForm(segment);
-                    modalInstance?.show();
-                });
-            });
+            L.polyline(latLngs, {
+                color: '#d9485f',
+                weight: 8,
+                opacity: 0.18,
+            }).addTo(activeMatchLayer);
         }
 
         function resetInspector() {
@@ -202,7 +228,7 @@
             }
 
             if (coveragePanel) {
-                coveragePanel.textContent = 'Choose a rule or segment to inspect its coverage.';
+                coveragePanel.textContent = 'Hover or choose a result to inspect it.';
             }
 
             if (statusPanel) {
@@ -210,8 +236,36 @@
             }
         }
 
-        function highlightSegment(segmentId) {
-            const segment = segments.find((item) => Number(item.id) === Number(segmentId));
+        function findSegment(segmentId) {
+            return renderedSegments.find((item) => Number(item.id) === Number(segmentId)) || null;
+        }
+
+        function updateInspectorForSegment(segment, customCoverage) {
+            if (selectedSegmentPanel) {
+                selectedSegmentPanel.textContent = segment?.segment_name || 'No segment selected.';
+            }
+
+            if (coveragePanel) {
+                coveragePanel.textContent = customCoverage || (segment ? getSegmentSummary(segment) : 'Hover or choose a result to inspect it.');
+            }
+
+            if (!activeRuleId && statusPanel) {
+                statusPanel.textContent = segment && segment.road_rules_count
+                    ? `${segment.road_rules_count} linked rule${segment.road_rules_count === 1 ? '' : 's'}`
+                    : 'No rule selected.';
+            }
+        }
+
+        function highlightSegment(segmentId, options) {
+            const settings = Object.assign({
+                fitBounds: true,
+                openModal: false,
+                prefillForm: false,
+                preserveActiveRule: false,
+                customCoverage: null,
+            }, options || {});
+
+            const segment = findSegment(segmentId);
 
             if (!segment) {
                 return;
@@ -224,77 +278,430 @@
             }
 
             activeSegmentId = Number(segmentId);
+
+            if (!settings.preserveActiveRule) {
+                activeRuleId = null;
+            }
+
             restoreSegmentVisualState();
+            drawMatchGlow(segment);
+            updateInspectorForSegment(segment, settings.customCoverage);
+            updateResultSelectionState();
 
-            if (activeLayer) {
-                map.removeLayer(activeLayer);
-                activeLayer = null;
+            if (settings.fitBounds) {
+                map.fitBounds(L.latLngBounds(latLngs), {
+                    padding: [30, 30],
+                });
             }
 
-            activeLayer = L.polyline(latLngs, {
-                color: '#d9485f',
-                weight: 6,
-                opacity: 0.35,
-            }).addTo(map);
-
-            map.fitBounds(L.latLngBounds(latLngs), {
-                padding: [30, 30],
-            });
-
-            if (selectedSegmentPanel) {
-                selectedSegmentPanel.textContent = segment.segment_name || 'Unnamed segment';
+            if (settings.prefillForm) {
+                autoFillRuleForm(segment);
             }
 
-            if (coveragePanel) {
-                coveragePanel.textContent = getSegmentSummary(segment);
+            if (settings.openModal) {
+                modalInstance?.show();
             }
         }
 
-        document.querySelectorAll('[data-road-rule]').forEach((button) => {
-            button.addEventListener('click', function () {
-                const rule = JSON.parse(button.dataset.roadRule || '{}');
+        function previewSegment(segmentId, coverageText) {
+            const segment = findSegment(segmentId);
 
-                if (statusPanel) {
-                    statusPanel.textContent = rule.is_active ? 'Active rule' : 'Inactive rule';
+            if (!segment) {
+                return;
+            }
+
+            restoreSegmentVisualState();
+            applySegmentHoverState(segmentId);
+            drawMatchGlow(segment);
+            updateInspectorForSegment(segment, coverageText);
+        }
+
+        function clearPreview() {
+            clearActiveMatchLayer();
+
+            if (activeSegmentId !== null) {
+                highlightSegment(activeSegmentId, {
+                    fitBounds: false,
+                    preserveActiveRule: true,
+                    customCoverage: activeRuleId !== null ? coveragePanel?.textContent : null,
+                });
+                return;
+            }
+
+            restoreSegmentVisualState();
+            resetInspector();
+        }
+
+        function safeJsonParse(value) {
+            try {
+                return JSON.parse(value || '{}');
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function bindSegmentLayerInteractions(layer, segment) {
+            layer.segmentId = segment.id;
+            layer.bindTooltip(buildTooltipContent(segment), {
+                sticky: true,
+                direction: 'top',
+                opacity: 1,
+            });
+            layer.on('mouseover', function () {
+                previewSegment(segment.id);
+            });
+            layer.on('mouseout', function () {
+                clearPreview();
+            });
+            layer.on('click', function () {
+                highlightSegment(segment.id, {
+                    openModal: true,
+                    prefillForm: true,
+                });
+            });
+        }
+
+        function renderSegmentsOnMap() {
+            segmentLayer.clearLayers();
+            segmentMarkerLayer.clearLayers();
+            clearActiveMatchLayer();
+
+            renderedSegments.forEach((segment) => {
+                const latLngs = getSegmentLatLngs(segment);
+
+                if (latLngs.length < 2) {
+                    return;
                 }
 
-                if (coveragePanel) {
-                    coveragePanel.textContent = `${rule.rule_type || 'Rule'}${rule.rule_value ? ` | ${rule.rule_value}` : ''}`;
+                const polyline = L.polyline(latLngs, {
+                    color: '#7d8ca3',
+                    weight: 4,
+                    opacity: 0.48,
+                }).addTo(segmentLayer);
+
+                bindSegmentLayerInteractions(polyline, segment);
+
+                const center = L.latLngBounds(latLngs).getCenter();
+                const marker = L.marker(center, {
+                    icon: createSegmentIcon(Number(segment.id) === Number(activeSegmentId)),
+                }).addTo(segmentMarkerLayer);
+
+                bindSegmentLayerInteractions(marker, segment);
+            });
+
+            restoreSegmentVisualState();
+        }
+
+        function segmentMarkup(segment) {
+            const rulesMarkup = Array.isArray(segment.rules) && segment.rules.length
+                ? `
+                    <div class="geo-rule-result__rules">
+                        ${segment.rules.map((rule) => `
+                            <button
+                                type="button"
+                                class="geo-rule-chip"
+                                data-road-rule='${escapeHtml(JSON.stringify(rule))}'
+                                data-segment-id="${segment.id}"
+                            >
+                                <span>${escapeHtml(rule.rule_name)}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `
+                : '<div class="geo-rule-result__empty">No rules saved for this segment.</div>';
+
+            return `
+                <article class="geo-rule-result" data-segment-id="${segment.id}">
+                    <button type="button" class="geo-rule-result__segment" data-road-rule-segment='${escapeHtml(JSON.stringify(segment))}'>
+                        <span class="geo-rule-result__segment-main">
+                            <span class="geo-rule-result__segment-icon">
+                                <i class="bi bi-signpost-split"></i>
+                            </span>
+                            <span>
+                                <span class="geo-rule-result__segment-name">${escapeHtml(segment.segment_name || 'Road segment')}</span>
+                                <span class="geo-rule-result__segment-meta">${escapeHtml(getSegmentSummary(segment))}</span>
+                            </span>
+                        </span>
+                        <span class="geo-rule-result__count">${segment.road_rules_count || 0}</span>
+                    </button>
+                    ${rulesMarkup}
+                </article>
+            `;
+        }
+
+        function renderResultsList(segments, mode) {
+            if (!resultsList) {
+                return;
+            }
+
+            if (!segments.length && mode === 'replace') {
+                resultsList.innerHTML = '<div class="geo-segment-list__empty">No matching segments or rules found.</div>';
+                updateResultSelectionState();
+                return;
+            }
+
+            const html = segments.map(segmentMarkup).join('');
+
+            if (mode === 'append') {
+                resultsList.insertAdjacentHTML('beforeend', html);
+            } else {
+                resultsList.innerHTML = html;
+            }
+
+            updateResultSelectionState();
+        }
+
+        function updateLoadMoreButton() {
+            if (!loadMoreBtn) {
+                return;
+            }
+
+            loadMoreBtn.disabled = !hasMorePages;
+            loadMoreBtn.querySelector('span').textContent = hasMorePages ? 'Load more' : 'No more results';
+        }
+
+        function updateResultsMeta(meta) {
+            currentPage = Number(meta?.current_page || 1);
+            hasMorePages = Boolean(meta?.has_more);
+
+            if (resultsCount) {
+                resultsCount.textContent = meta?.total ?? renderedSegments.length;
+            }
+
+            updateLoadMoreButton();
+        }
+
+        function mergeSegments(existingSegments, newSegments) {
+            const merged = new Map(existingSegments.map((segment) => [Number(segment.id), segment]));
+
+            newSegments.forEach((segment) => {
+                merged.set(Number(segment.id), segment);
+            });
+
+            return Array.from(merged.values());
+        }
+
+        async function fetchSegments(options) {
+            const settings = Object.assign({
+                page: 1,
+                append: false,
+                search: '',
+            }, options || {});
+
+            const serial = ++requestSerial;
+
+            if (loadMoreBtn && settings.append) {
+                loadMoreBtn.disabled = true;
+                loadMoreBtn.querySelector('span').textContent = 'Loading...';
+            }
+
+            if (resultsList && !settings.append) {
+                resultsList.classList.add('is-loading');
+            }
+
+            try {
+                const url = new URL(dataUrl, window.location.origin);
+                url.searchParams.set('page', String(settings.page));
+
+                if (settings.search) {
+                    url.searchParams.set('search', settings.search);
                 }
 
-                if (selectedSegmentPanel) {
-                    selectedSegmentPanel.textContent = rule.segment_name || 'No linked segment';
+                const response = await fetch(url.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
                 }
 
-                if (rule.segment_id) {
-                    highlightSegment(rule.segment_id);
+                const payload = await response.json();
+
+                if (serial !== requestSerial) {
+                    return;
+                }
+
+                const items = Array.isArray(payload.items) ? payload.items : [];
+
+                renderedSegments = settings.append
+                    ? mergeSegments(renderedSegments, items)
+                    : items;
+
+                renderSegmentsOnMap();
+                renderResultsList(items, settings.append ? 'append' : 'replace');
+                updateResultsMeta(payload.meta || {});
+
+                if (settings.search.trim()) {
+                    fitMapToCurrentResults();
+                }
+
+                if (activeSegmentId !== null && !findSegment(activeSegmentId)) {
+                    activeSegmentId = null;
+                    activeRuleId = null;
+                    resetInspector();
+                }
+            } catch (error) {
+                if (resultsList && !settings.append) {
+                    resultsList.innerHTML = '<div class="geo-segment-list__empty">Unable to load results right now.</div>';
+                }
+            } finally {
+                resultsList?.classList.remove('is-loading');
+                updateLoadMoreButton();
+            }
+        }
+
+        function fitMapToCurrentResults() {
+            const bounds = [];
+
+            renderedSegments.forEach((segment) => {
+                const latLngs = getSegmentLatLngs(segment);
+
+                if (latLngs.length >= 2) {
+                    bounds.push(...latLngs);
                 }
             });
+
+            if (bounds.length >= 2) {
+                map.fitBounds(L.latLngBounds(bounds), {
+                    padding: [32, 32],
+                });
+            }
+        }
+
+        function handleSegmentButtonClick(button) {
+            const segment = safeJsonParse(button.dataset.roadRuleSegment);
+
+            if (!segment?.id) {
+                return;
+            }
+
+            highlightSegment(segment.id, {
+                openModal: true,
+                prefillForm: true,
+            });
+        }
+
+        function handleRuleButtonClick(button) {
+            const rule = safeJsonParse(button.dataset.roadRule);
+
+            if (!rule) {
+                return;
+            }
+
+            activeRuleId = Number(rule.id);
+
+            if (statusPanel) {
+                statusPanel.textContent = rule.is_active ? 'Active rule' : 'Inactive rule';
+            }
+
+            if (rule.segment_id) {
+                highlightSegment(rule.segment_id, {
+                    fitBounds: true,
+                    preserveActiveRule: true,
+                    customCoverage: formatRuleMeta(rule),
+                });
+            }
+
+            updateResultSelectionState();
+        }
+
+        resultsList?.addEventListener('mouseover', function (event) {
+            const ruleButton = event.target.closest('[data-road-rule]');
+
+            if (ruleButton) {
+                const rule = safeJsonParse(ruleButton.dataset.roadRule);
+
+                if (rule?.segment_id) {
+                    previewSegment(rule.segment_id, formatRuleMeta(rule));
+                }
+
+                return;
+            }
+
+            const segmentButton = event.target.closest('[data-road-rule-segment]');
+
+            if (segmentButton) {
+                const segment = safeJsonParse(segmentButton.dataset.roadRuleSegment);
+
+                if (segment?.id) {
+                    previewSegment(segment.id);
+                }
+            }
+        });
+
+        resultsList?.addEventListener('mouseout', function (event) {
+            if (event.target.closest('[data-road-rule]') || event.target.closest('[data-road-rule-segment]')) {
+                clearPreview();
+            }
+        });
+
+        resultsList?.addEventListener('click', function (event) {
+            const ruleButton = event.target.closest('[data-road-rule]');
+
+            if (ruleButton) {
+                handleRuleButtonClick(ruleButton);
+                return;
+            }
+
+            const segmentButton = event.target.closest('[data-road-rule-segment]');
+
+            if (segmentButton) {
+                handleSegmentButtonClick(segmentButton);
+            }
+        });
+
+        loadMoreBtn?.addEventListener('click', function () {
+            if (!hasMorePages) {
+                return;
+            }
+
+            fetchSegments({
+                page: currentPage + 1,
+                append: true,
+                search: currentSearch,
+            });
+        });
+
+        searchInput?.addEventListener('input', function () {
+            currentSearch = this.value.trim();
+
+            window.clearTimeout(searchDebounceHandle);
+
+            searchDebounceHandle = window.setTimeout(function () {
+                activeSegmentId = null;
+                activeRuleId = null;
+                resetInspector();
+                fetchSegments({
+                    page: 1,
+                    append: false,
+                    search: currentSearch,
+                });
+            }, 280);
         });
 
         segmentSelect?.addEventListener('change', function () {
             if (this.value) {
-                highlightSegment(this.value);
+                highlightSegment(this.value, {
+                    fitBounds: true,
+                    preserveActiveRule: false,
+                });
             }
-        });
-
-        ruleNameInput?.addEventListener('input', function () {
-            this.dataset.autoFilled = this.value.trim() ? 'false' : 'true';
         });
 
         locationNameInput?.addEventListener('input', function () {
             this.dataset.autoFilled = this.value.trim() ? 'false' : 'true';
         });
 
-        if (ruleNameInput && !ruleNameInput.value.trim()) {
-            ruleNameInput.dataset.autoFilled = 'true';
-        }
-
         if (locationNameInput && !locationNameInput.value.trim()) {
             locationNameInput.dataset.autoFilled = 'true';
         }
 
-        renderSegments();
+        renderSegmentsOnMap();
+        renderResultsList(renderedSegments, 'replace');
+        updateResultsMeta(pageConfig.pagination || {});
         resetInspector();
     });
 })();

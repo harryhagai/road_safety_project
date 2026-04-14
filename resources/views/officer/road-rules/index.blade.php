@@ -10,12 +10,12 @@
 @section('content')
     <div class="container-fluid geo-workspace px-1 px-lg-2 py-2">
         <div class="row g-2 geo-workspace__grid">
-            <div class="col-12 col-xl-8">
+            <div class="col-12 col-xl-6">
                 <section class="geo-card geo-card--fill geo-card--map">
                     <div class="geo-card__header">
                         <div>
                             <h2 class="geo-card__title">Road rules map</h2>
-                            <p class="geo-card__text mb-0">Review available segments and highlight the rule coverage on the map.</p>
+                            <p class="geo-card__text mb-0">Hover to highlight. Click a segment to open the rule form with its data prefilled.</p>
                         </div>
                     </div>
 
@@ -23,54 +23,107 @@
                 </section>
             </div>
 
-            <div class="col-12 col-xl-4">
-                <section class="geo-card geo-card--fill geo-card--inspector">
+            <div class="col-12 col-xl-6">
+                <section class="geo-card geo-card--fill geo-card--inspector geo-card--rule-browser">
                     <div class="geo-card__header">
                         <div>
-                            <h2 class="geo-card__title">Rule details</h2>
-                            <p class="geo-card__text mb-0">Select a rule or segment to preview what is already configured.</p>
+                            <h2 class="geo-card__title">Segments & rules</h2>
+                            <p class="geo-card__text mb-0">Search segments or rules. Matching results load automatically as you type.</p>
                         </div>
                     </div>
 
-                    <div class="geo-location-panel geo-location-panel--compact">
-                        <div class="geo-location-panel__label">Selected segment</div>
-                        <div id="ruleSelectedSegmentPanel" class="geo-location-panel__value">No segment selected.</div>
-                    </div>
-
-                    <div class="geo-location-panel geo-location-panel--compact">
-                        <div class="geo-location-panel__label">Rule coverage</div>
-                        <div id="ruleCoveragePanel" class="geo-location-panel__value">Choose a rule to inspect its segment.</div>
-                    </div>
-
-                    <div class="geo-location-panel">
-                        <div class="geo-location-panel__label">Rule status</div>
-                        <div id="ruleStatusPanel" class="geo-location-panel__value">No rule selected.</div>
-                    </div>
-
-                    <div class="geo-segment-list">
-                        <div class="geo-segment-list__header">
-                            <span>Saved rules</span>
-                            <span class="geo-segment-list__count">{{ $rules->count() }}</span>
+                    <div class="geo-rule-browser">
+                        <div class="geo-rule-browser__search">
+                            <label for="roadRuleSearchInput" class="geo-rule-browser__search-label">Search</label>
+                            <div class="geo-rule-browser__search-input-wrap">
+                                <i class="bi bi-search"></i>
+                                <input
+                                    type="search"
+                                    id="roadRuleSearchInput"
+                                    class="form-control"
+                                    placeholder="Search segment name, rule name, type, or location"
+                                    autocomplete="off"
+                                >
+                            </div>
                         </div>
 
-                        <div class="geo-segment-list__body">
-                            @forelse ($rules as $rule)
+                        <div class="geo-rule-browser__selection">
+                            <div class="geo-rule-browser__selection-grid">
+                                <div class="geo-location-panel geo-location-panel--compact">
+                                    <div class="geo-location-panel__label">Selected segment</div>
+                                    <div id="ruleSelectedSegmentPanel" class="geo-location-panel__value">No segment selected.</div>
+                                </div>
+
+                                <div class="geo-location-panel geo-location-panel--compact">
+                                    <div class="geo-location-panel__label">Coverage</div>
+                                    <div id="ruleCoveragePanel" class="geo-location-panel__value">Hover or choose a result to inspect it.</div>
+                                </div>
+                            </div>
+
+                            <div class="geo-location-panel">
+                                <div class="geo-location-panel__label">Status</div>
+                                <div id="ruleStatusPanel" class="geo-location-panel__value">No rule selected.</div>
+                            </div>
+                        </div>
+
+                        <div class="geo-segment-list geo-segment-list--rules">
+                            <div class="geo-segment-list__header">
+                                <span>Results</span>
+                                <span class="geo-segment-list__count" id="roadRuleResultsCount">{{ $initialSegmentPagination['total'] }}</span>
+                            </div>
+
+                            <div class="geo-segment-list__body" id="roadRuleResultsList">
+                                @foreach ($segments as $segment)
+                                    <article class="geo-rule-result" data-segment-id="{{ $segment['id'] }}">
+                                        <button type="button" class="geo-rule-result__segment" data-road-rule-segment='@json($segment)'>
+                                            <span class="geo-rule-result__segment-main">
+                                                <span class="geo-rule-result__segment-icon">
+                                                    <i class="bi bi-signpost-split"></i>
+                                                </span>
+                                                <span>
+                                                    <span class="geo-rule-result__segment-name">{{ $segment['segment_name'] }}</span>
+                                                    <span class="geo-rule-result__segment-meta">
+                                                        {{ $segment['segment_type'] ?: 'Road segment' }}
+                                                        @if ($segment['length_km'])
+                                                            | {{ number_format((float) $segment['length_km'], 2) }} km
+                                                        @endif
+                                                    </span>
+                                                </span>
+                                            </span>
+                                            <span class="geo-rule-result__count">{{ $segment['road_rules_count'] }}</span>
+                                        </button>
+
+                                        @if (count($segment['rules']))
+                                            <div class="geo-rule-result__rules">
+                                                @foreach ($segment['rules'] as $rule)
+                                                    <button
+                                                        type="button"
+                                                        class="geo-rule-chip"
+                                                        data-road-rule='@json($rule)'
+                                                        data-segment-id="{{ $segment['id'] }}"
+                                                    >
+                                                        <span>{{ $rule['rule_name'] }}</span>
+                                                    </button>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <div class="geo-rule-result__empty">No rules saved for this segment.</div>
+                                        @endif
+                                    </article>
+                                @endforeach
+                            </div>
+
+                            <div class="geo-segment-list__footer">
                                 <button
                                     type="button"
-                                    class="geo-segment-item geo-rule-item"
-                                    data-road-rule='@json($rule)'
+                                    class="btn geo-modal__secondary-btn w-100"
+                                    id="roadRuleLoadMoreBtn"
+                                    @disabled(! $initialSegmentPagination['has_more'])
                                 >
-                                    <span class="geo-segment-item__title">{{ $rule['rule_name'] }}</span>
-                                    <span class="geo-segment-item__meta">
-                                        {{ $rule['rule_type'] }}
-                                        @if ($rule['rule_value'])
-                                            | {{ $rule['rule_value'] }}
-                                        @endif
-                                    </span>
+                                    <i class="bi bi-arrow-down-circle"></i>
+                                    <span>{{ $initialSegmentPagination['has_more'] ? 'Load more' : 'No more results' }}</span>
                                 </button>
-                            @empty
-                                <div class="geo-segment-list__empty">No road rules saved yet.</div>
-                            @endforelse
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -99,11 +152,7 @@
                     <div class="modal-body geo-modal__body">
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <label for="rule_name" class="form-label">Rule name</label>
-                                <input type="text" class="form-control" id="rule_name" name="rule_name" value="{{ old('rule_name') }}" placeholder="e.g. Morogoro speed control" required>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label for="segment_id" class="form-label">Linked segment</label>
+                                <label for="segment_id" class="form-label">Segment</label>
                                 <select class="form-select" id="segment_id" name="segment_id" required>
                                     <option value="">Select segment</option>
                                     @foreach ($segments as $segment)
@@ -135,14 +184,6 @@
                             <div class="col-12">
                                 <label for="description" class="form-label">Description</label>
                                 <textarea class="form-control" id="description" name="description" rows="3" placeholder="Describe what this rule enforces">{{ old('description') }}</textarea>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label for="effective_from" class="form-label">Effective from</label>
-                                <input type="datetime-local" class="form-control" id="effective_from" name="effective_from" value="{{ old('effective_from') }}">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label for="effective_to" class="form-label">Effective to</label>
-                                <input type="datetime-local" class="form-control" id="effective_to" name="effective_to" value="{{ old('effective_to') }}">
                             </div>
                             <div class="col-12">
                                 <div class="form-check form-switch mt-2">
@@ -184,6 +225,8 @@
         window.roadRulePage = {
             segments: @json($segments),
             rules: @json($rules),
+            dataUrl: @json(route('officer.road-rules.data')),
+            pagination: @json($initialSegmentPagination),
         };
     </script>
     <script src="{{ asset('js/rsrsMapPicker.js') }}"></script>
