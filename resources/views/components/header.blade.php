@@ -2,12 +2,12 @@
     <div class="header-container">
         <div class="header-branding">
             <div class="header-logo">
-                <img src="{{ asset('img/hg-logo.png') }}" alt="Henry Gogarty Logo"
-                    style="height: 50px; border-radius: 50%;" />
+                <img src="{{ asset('img/road-safety-favicon.svg') }}" alt="RSRS Logo"
+                    style="height: 50px; border-radius: 12px;" />
             </div>
             <span class="header-name">
-                <span class="header-title">Henry Gogarty</span>
-                <span class="header-subtitle">Secondary school</span>
+                <span class="header-title">RSRS</span>
+                <span class="header-subtitle">Road Safety Reporting System</span>
             </span>
 
         </div>

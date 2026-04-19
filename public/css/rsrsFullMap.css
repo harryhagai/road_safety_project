@@ -1,0 +1,21 @@
+.rs-map-wrapper {
+    position: relative;
+    width: 100%;
+    z-index: 10;
+    padding: 0;
+    margin: 0;
+}
+
+.rs-map-container {
+    width: 100%;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
+}
+
+/* Ensure Leaflet takes up whole space */
+#mainPublicMap {
+    height: 85vh !important;
+    width: 100% !important;
+}
+
