@@ -13,7 +13,7 @@
     <div class="rs-map-wrapper">
         <div class="rs-map-container">
             <!-- OpenStreetMap Canvas -->
-            <x-map.canvas id="mainPublicMap" :config="$mapConfig" height="100vh" :show-toolbar="false" mode="viewer" />
+            <x-map.canvas id="mainPublicMap" :config="$mapConfig" height="100%" :show-toolbar="false" mode="viewer" />
         </div>
     </div>
 @endsection

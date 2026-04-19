@@ -52,11 +52,12 @@
 
 </head>
 
-<body data-disable-navigation-overlay="1" data-inline-spinner-links="1" data-inline-spinner-theme="blue">
+<body class="d-flex flex-column min-vh-100" data-disable-navigation-overlay="1" data-inline-spinner-links="1" data-inline-spinner-theme="blue">
     @include('components.header')
 
-
-    @yield('content')
+    <main class="flex-grow-1">
+        @yield('content')
+    </main>
 
     @include('components.footer')
 
