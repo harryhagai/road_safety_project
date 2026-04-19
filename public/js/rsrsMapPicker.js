@@ -8,6 +8,21 @@
         });
     }
 
+    function distanceInMeters(a, b) {
+        const toRad = (value) => (value * Math.PI) / 180;
+        const earthRadius = 6371000;
+        const dLat = toRad(b.lat - a.lat);
+        const dLng = toRad(b.lng - a.lng);
+        const lat1 = toRad(a.lat);
+        const lat2 = toRad(b.lat);
+
+        const sinLat = Math.sin(dLat / 2);
+        const sinLng = Math.sin(dLng / 2);
+        const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+
+        return 2 * earthRadius * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    }
+
     function bindMap(root) {
         const config = JSON.parse(root.dataset.mapConfig || '{}');
         const mode = root.dataset.mapMode || 'picker';
@@ -18,26 +33,56 @@
         const map = L.map(root, {
             zoomControl: false,
             fadeAnimation: true,
-            markerZoomAnimation: true
+            markerZoomAnimation: true,
+            preferCanvas: true,
         }).setView(
             [config.defaultCenter.lat, config.defaultCenter.lng],
             config.defaultZoom
         );
 
         L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-        // Fix for grey boxes/sizing issues in dynamic containers
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 300);
+        L.control.scale({
+            metric: true,
+            imperial: false,
+            position: 'bottomleft',
+            maxWidth: 140,
+        }).addTo(map);
 
         L.tileLayer(config.tiles.url, {
             minZoom: config.minZoom,
             maxZoom: config.maxZoom,
             attribution: config.tiles.attribution,
+            updateWhenIdle: true,
+            keepBuffer: 4,
         }).addTo(map);
 
         let marker = null;
+        let reverseGeocodeController = null;
+        let lastReverseGeocodePoint = null;
+
+        function ensureSize() {
+            requestAnimationFrame(() => map.invalidateSize());
+        }
+
+        map.whenReady(() => {
+            ensureSize();
+
+            const readyEventDetail = { map, mode, rootId: root.id || null };
+            root.dispatchEvent(new CustomEvent('rsrs:map-ready', { detail: readyEventDetail }));
+            document.dispatchEvent(new CustomEvent('rsrs:map-ready', { detail: readyEventDetail }));
+        });
+
+        window.addEventListener('resize', ensureSize);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                ensureSize();
+            }
+        });
+
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(ensureSize);
+            observer.observe(root);
+        }
 
         function updateCoordinateText(lat, lng) {
             if (!coordinatesLabel) {
@@ -60,12 +105,19 @@
         }
 
         async function resolveLocation(lat, lng) {
+            if (reverseGeocodeController) {
+                reverseGeocodeController.abort();
+            }
+
+            reverseGeocodeController = new AbortController();
+
             const response = await fetch(
                 `${config.reverseGeocodeUrl}?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`,
                 {
                     headers: {
                         Accept: 'application/json',
                     },
+                    signal: reverseGeocodeController.signal,
                 }
             );
 
@@ -76,7 +128,9 @@
             return response.json();
         }
 
-        async function handleSelection(lat, lng) {
+        async function handleSelection(lat, lng, options = {}) {
+            const shouldResolveLocation = options.resolveLocation !== false;
+
             if (mode !== 'segment-builder') {
                 if (!marker) {
                     marker = L.marker([lat, lng]).addTo(map);
@@ -87,11 +141,28 @@
 
             updateCoordinateText(lat, lng);
 
+            if (!shouldResolveLocation) {
+                map.fire('rsrs:location-resolved', {
+                    lat,
+                    lng,
+                    displayName: null,
+                    address: {},
+                });
+                return;
+            }
+
             const locationTarget = document.getElementById('mapResolvedLocation');
 
             if (locationTarget) {
                 locationTarget.textContent = 'Resolving location name...';
             }
+
+            const point = { lat, lng };
+            if (lastReverseGeocodePoint && distanceInMeters(lastReverseGeocodePoint, point) < 12) {
+                return;
+            }
+
+            lastReverseGeocodePoint = point;
 
             try {
                 const result = await resolveLocation(lat, lng);
@@ -107,6 +178,10 @@
                     address: result.address || {},
                 });
             } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
                 if (locationTarget) {
                     locationTarget.textContent = 'Location lookup failed. You can still continue with raw coordinates.';
                 }
@@ -134,7 +209,11 @@
 
         root.mapApi = {
             map,
+            ensureSize,
             selectPoint: handleSelection,
+            centerOn(lat, lng, zoom = map.getZoom(), animate = true) {
+                map.setView([lat, lng], zoom, { animate });
+            },
         };
     }
 

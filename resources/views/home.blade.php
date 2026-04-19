@@ -8,21 +8,20 @@
         $mapConfig = $mapConfigService->forFrontend();
     @endphp
 
-    <div class="home-map-layout">
-        <div class="home-map-layout__container">
-            <section class="geo-card geo-card--fill geo-card--map home-map-card">
-                <div class="geo-card__header home-map-card__header">
-                    <div>
-                        <h2 class="geo-card__title">Live Road Network</h2>
-                        <p class="geo-card__text mb-0">Explore active road segments, monitoring zones, and reported incidents across the map.</p>
+    <div class="container-fluid container-xl geo-workspace px-2 px-md-3 py-2 py-md-3 home-geo-workspace">
+        <div class="row g-2 g-md-3 geo-workspace__grid">
+            <div class="col-12">
+                <section class="geo-card geo-card--fill geo-card--map home-geo-card">
+                    <div class="geo-card__header">
+                        <div>
+                            <h2 class="geo-card__title">Live Road Network</h2>
+                            <p class="geo-card__text mb-0">Explore active road segments, monitoring zones, and reported incidents across the map.</p>
+                        </div>
                     </div>
-                </div>
 
-                <div class="home-map-canvas-wrap">
-                    <!-- OpenStreetMap Canvas -->
                     <x-map.canvas id="mainPublicMap" :config="$mapConfig" height="100%" :show-toolbar="false" mode="viewer" />
-                </div>
-            </section>
+                </section>
+            </div>
         </div>
     </div>
 @endsection
@@ -33,8 +32,8 @@
 
     <style>
         :root {
-            --home-header-height: 86px;
-            --home-footer-height: 56px;
+            --home-header-height: 84px;
+            --home-footer-height: 80px;
         }
 
         .header-wrapper {
@@ -54,70 +53,69 @@
         }
 
         main.flex-grow-1 {
-            padding-top: calc(var(--home-header-height) + 0.85rem);
-            padding-bottom: calc(var(--home-footer-height) + 0.85rem);
+            padding-top: calc(var(--home-header-height) + 0.6rem);
+            padding-bottom: calc(var(--home-footer-height) + 0.6rem);
         }
 
-        .home-map-layout {
-            width: 100%;
+        .home-geo-workspace {
+            min-height: calc(100vh - var(--home-header-height) - var(--home-footer-height) - 1.2rem);
+        }
+
+        .home-geo-card {
             display: flex;
-            justify-content: center;
-            padding: 0 0.75rem;
+            flex-direction: column;
+            margin: 0 auto;
+            width: 100%;
+            height: calc(100vh - var(--home-header-height) - var(--home-footer-height) - 1.2rem);
+            min-height: 460px;
         }
 
-        .home-map-layout__container {
-            width: min(1200px, 100%);
-            height: calc(100vh - var(--home-header-height) - var(--home-footer-height) - 1.7rem);
-            min-height: 520px;
-        }
-
-        .home-map-card {
-            height: 100%;
-        }
-
-        .home-map-card__header {
-            padding: 1rem 1rem 0.35rem;
-        }
-
-        .home-map-canvas-wrap {
+        .home-geo-card .geo-map-shell {
+            display: flex;
+            flex-direction: column;
             flex: 1 1 auto;
             min-height: 0;
+            height: 100%;
             padding: 0.75rem 1rem 1rem;
         }
 
-        .home-map-canvas-wrap #mainPublicMap,
-        .home-map-canvas-wrap .geo-map-canvas,
-        .home-map-canvas-wrap .leaflet-container {
-            width: 100%;
-            height: 100%;
-            min-height: 0;
+        .home-geo-card #mainPublicMap,
+        .home-geo-card .geo-map-canvas {
+            height: 100% !important;
+            min-height: 320px;
             border-radius: 18px;
-            overflow: hidden;
-            border: 1px solid rgba(31, 49, 79, 0.1);
         }
 
-        @media (max-width: 768px) {
+        @media (min-width: 768px) {
             :root {
-                --home-header-height: 84px;
-                --home-footer-height: 80px;
+                --home-header-height: 86px;
+                --home-footer-height: 56px;
             }
 
             main.flex-grow-1 {
-                padding-top: calc(var(--home-header-height) + 0.65rem);
-                padding-bottom: calc(var(--home-footer-height) + 0.65rem);
+                padding-top: calc(var(--home-header-height) + 0.8rem);
+                padding-bottom: calc(var(--home-footer-height) + 0.8rem);
             }
 
-            .home-map-layout {
-                padding: 0 0.5rem;
+            .home-geo-workspace,
+            .home-geo-card {
+                min-height: 520px;
+                height: calc(100vh - var(--home-header-height) - var(--home-footer-height) - 1.6rem);
             }
 
-            .home-map-layout__container {
-                min-height: 460px;
-                height: calc(100vh - var(--home-header-height) - var(--home-footer-height) - 1.3rem);
+            .home-geo-card .geo-map-shell {
+                padding: 0.75rem 1rem 1rem;
             }
 
-            .home-map-canvas-wrap {
-                padding: 0.65rem 0.75rem 0.8rem;
+            .home-geo-card #mainPublicMap,
+            .home-geo-card .geo-map-canvas {
+                min-height: 420px;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .home-geo-card {
+                max-width: 1200px;
             }
         }
     </style>
@@ -125,63 +123,135 @@
 
 @section('scripts')
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="{{ asset('js/rsrsMapPicker.js') }}"></script>
+    <script src="{{ asset('js/rsrsMapPicker.js') }}?v={{ filemtime(public_path('js/rsrsMapPicker.js')) }}"></script>
     <script>
-        (function() {
+        (function () {
             let mapInterface = null;
             let watchId = null;
+            let hasCentered = false;
+            let userHasAdjustedView = false;
+            let lastTrackedPoint = null;
+            let lastTrackTimestamp = 0;
 
-            function init() {
-                const mapEl = document.getElementById('mainPublicMap');
+            function distanceInMeters(a, b) {
+                const toRad = (value) => (value * Math.PI) / 180;
+                const earthRadius = 6371000;
+                const dLat = toRad(b.lat - a.lat);
+                const dLng = toRad(b.lng - a.lng);
+                const lat1 = toRad(a.lat);
+                const lat2 = toRad(b.lat);
+                const sinLat = Math.sin(dLat / 2);
+                const sinLng = Math.sin(dLng / 2);
+                const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
 
-                // Fast poll for map readiness
-                const poll = () => {
-                    if (mapEl && mapEl.mapApi) {
-                        mapInterface = mapEl.mapApi;
-                        // Immediate rendering fix
-                        mapInterface.map.invalidateSize();
-                        // Start GPS in background
-                        initializeTracking();
-                    } else {
-                        requestAnimationFrame(poll);
-                    }
-                };
-                poll();
+                return 2 * earthRadius * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
             }
 
-            function initializeTracking() {
+            function applyPosition(position) {
+                if (!mapInterface) return;
+
+                const latitude = Number(position.coords.latitude);
+                const longitude = Number(position.coords.longitude);
+                const now = Date.now();
+                const currentPoint = { lat: latitude, lng: longitude };
+
+                if (lastTrackedPoint) {
+                    const movedMeters = distanceInMeters(lastTrackedPoint, currentPoint);
+                    if (movedMeters < 5 && now - lastTrackTimestamp < 1200) {
+                        return;
+                    }
+                }
+
+                lastTrackedPoint = currentPoint;
+                lastTrackTimestamp = now;
+
+                mapInterface.selectPoint(latitude, longitude, { resolveLocation: false });
+
+                if (!hasCentered) {
+                    mapInterface.map.panTo([latitude, longitude], { animate: false });
+                    hasCentered = true;
+                } else if (!userHasAdjustedView) {
+                    mapInterface.map.panTo([latitude, longitude], { animate: false });
+                }
+            }
+
+            function startWatch(highAccuracy) {
                 if (!navigator.geolocation || !mapInterface) return;
 
-                const startWatching = (highAccuracy) => {
-                    if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                }
 
-                    watchId = navigator.geolocation.watchPosition(
-                        (pos) => {
-                            const { latitude, longitude } = pos.coords;
-                            mapInterface.selectPoint(latitude, longitude);
-                            // Smoothly transition to user location
-                            mapInterface.map.flyTo([latitude, longitude], 16, {
-                                animate: true,
-                                duration: 1.5
-                            });
-                        },
-                        (err) => {
-                            console.warn(`GPS Error (${err.code}): ${err.message}`);
-                            if (highAccuracy && (err.code === 3 || err.code === 2)) {
-                                startWatching(false);
-                            }
-                        },
-                        { enableHighAccuracy: highAccuracy, timeout: 15000, maximumAge: 1000 }
-                    );
+                watchId = navigator.geolocation.watchPosition(
+                    applyPosition,
+                    (error) => {
+                        if (highAccuracy && (error.code === 2 || error.code === 3)) {
+                            startWatch(false);
+                        }
+                    },
+                    {
+                        enableHighAccuracy: highAccuracy,
+                        timeout: highAccuracy ? 9000 : 12000,
+                        maximumAge: highAccuracy ? 0 : 5000,
+                    }
+                );
+            }
+
+            function bootstrapGps() {
+                if (!navigator.geolocation || !mapInterface) return;
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        applyPosition(position);
+                        startWatch(true);
+                    },
+                    () => {
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                applyPosition(position);
+                                startWatch(false);
+                            },
+                            () => startWatch(false),
+                            { enableHighAccuracy: false, timeout: 8000, maximumAge: 15000 }
+                        );
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            }
+
+            function initWhenMapReady() {
+                const mapEl = document.getElementById('mainPublicMap');
+                if (!mapEl) return;
+
+                const wireUp = () => {
+                    if (!mapEl.mapApi) return;
+                    mapInterface = mapEl.mapApi;
+                    mapInterface.ensureSize();
+
+                    const markUserAdjusted = () => {
+                        if (hasCentered) {
+                            userHasAdjustedView = true;
+                        }
+                    };
+
+                    mapInterface.map.on('zoomstart', markUserAdjusted);
+                    mapInterface.map.on('dragstart', markUserAdjusted);
+
+                    bootstrapGps();
                 };
 
-                startWatching(true);
+                if (mapEl.mapApi) {
+                    wireUp();
+                    return;
+                }
+
+                mapEl.addEventListener('rsrs:map-ready', wireUp, { once: true });
             }
 
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', init);
+                document.addEventListener('DOMContentLoaded', initWhenMapReady);
             } else {
-                init();
+                initWhenMapReady();
             }
         })();
     </script>

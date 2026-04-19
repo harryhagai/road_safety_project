@@ -23,6 +23,7 @@
     <link href="{{ asset('css/rsrsPublicFooter.css') }}" rel="stylesheet">
     <link href="{{ asset('css/rsrsHome.css') }}" rel="stylesheet">
     <link href="{{ asset('css/rsrsAuth.css') }}" rel="stylesheet">
+    @stack('styles')
     <style>
         :root {
             --font-heading: "Segoe UI", "Trebuchet MS", Verdana, sans-serif;
@@ -78,6 +79,7 @@
     <script src="{{ asset('js/rsrsPublicHeader.js') }}"></script>
     <script src="{{ asset('js/rsrsButtonSpinner.js') }}"></script>
     @yield('scripts')
+    @stack('scripts')
 
 </body>
 
