@@ -10,11 +10,11 @@
         <div style="max-width:580px; margin:0 auto; background:rgba(255,255,255,0.98); border:1px solid rgba(16,152,212,0.16); border-radius:24px; overflow:hidden; box-shadow:0 20px 40px rgba(13,111,155,0.12);">
             <div style="padding:24px 22px 16px; background:linear-gradient(135deg, #f9feff 0%, #eefaff 45%, #ffffff 100%); border-bottom:1px solid rgba(16,152,212,0.12); text-align:center;">
                 <div style="display:inline-block; padding:8px 14px; border-radius:999px; background:rgba(16,152,212,0.08); border:1px solid rgba(16,152,212,0.14); color:#0d6f9b; font-size:12px; font-weight:400; letter-spacing:0.08em; text-transform:uppercase;">
-                    HGSS-SIMS Password Recovery
+                    RSRS Password Recovery
                 </div>
                 <h1 style="margin:16px 0 10px; font-size:28px; line-height:1.2; color:#102f45;">Reset Your Password</h1>
                 <p style="margin:0 auto; max-width:430px; font-size:15px; line-height:1.75; color:#516d80;">
-                    A request was received to reset the password for your Henry Gogarty Secondary School account.
+                    A request was received to reset the password for your Road Safety Reporting System account.
                 </p>
             </div>
 
@@ -47,9 +47,9 @@
             </div>
 
             <div style="padding:18px 22px 22px; border-top:1px solid rgba(16,152,212,0.12); background:#fcfeff; text-align:center;">
-                <p style="margin:0 0 6px; font-size:13px; font-weight:400; color:#102f45;">Henry Gogarty Secondary School</p>
+                <p style="margin:0 0 6px; font-size:13px; font-weight:400; color:#102f45;">Road Safety Reporting System</p>
                 <p style="margin:0; font-size:12px; line-height:1.7; color:#6b8597;">
-                    HGSS Student Information Management System
+                    RSRS Monitoring Dashboard
                 </p>
             </div>
         </div>

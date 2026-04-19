@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Contact Us - Henry Gogarty Secondary School')
+@section('title', 'Contact Us - Road Safety Reporting System')
 
 @section('content')
     <style>
@@ -154,7 +154,7 @@
                 <div class="section-shell">
                     <div class="text-center mb-4">
                         <h2 class="section-title mb-2">Contact Us</h2>
-                        <p class="section-intro mb-0">Reach out to Henry Gogarty Secondary School for admissions, support, or general enquiries.</p>
+                        <p class="section-intro mb-0">Reach out to Road Safety Reporting System for support or general enquiries.</p>
                     </div>
 
                     <div class="row g-4 mb-4">
@@ -163,7 +163,7 @@
                                 <div class="card-body p-4">
                                     <i class="bi bi-geo-alt-fill feature-icon"></i>
                                     <h5>Our Location</h5>
-                                    <p>Henry Gogarty Secondary School<br>P.O. Box 1169, Arusha, Tanzania</p>
+                                    <p>Road Safety Reporting System<br>P.O. Box 1169, Arusha, Tanzania</p>
                                 </div>
                             </div>
                         </div>

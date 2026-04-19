@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'About Henry Gogarty Secondary School')
+@section('title', 'About Road Safety Reporting System')
 
 @section('content')
     @php
@@ -579,14 +579,13 @@
                         <div class="hero-copy">
                             <h1 class="hero-title mb-3">
                                 <span class="hero-highlight">About</span><br>
-                                <span class="hero-title-line">Henry Gogarty Secondary School</span>
+                                <span class="hero-title-line">Road Safety Reporting System</span>
                             </h1>
 
                             <div class="hero-system-tag">Education, discipline and innovation for future leaders</div>
 
                             <p class="lead mb-4">
-                                Henry Gogarty Secondary School is a private, faith-based school in Makumira, Arusha,
-                                committed to academic excellence, strong values and holistic student growth.
+                                Road Safety Reporting System is committed to academic excellence, strong values and holistic student growth.
                             </p>
 
                             <div class="hero-actions hero-actions-inline">
@@ -604,7 +603,7 @@
                         <div class="hero-visual">
                             <div class="hero-orbit hero-orbit-one" aria-hidden="true"></div>
                             <div class="hero-image-frame hero-logo-frame">
-                                <img src="{{ asset('img/hg-logo.png') }}" alt="Henry Gogarty Secondary School logo">
+                                <img src="{{ asset('img/rsrs-logo.png') }}" alt="Road Safety Reporting System logo">
                             </div>
                         </div>
                     </div>
@@ -665,7 +664,7 @@
                     <div class="text-center mb-4">
                         <h2 class="section-title mb-2">Our Core Values</h2>
                         <p class="section-intro mb-0">
-                            The school culture at HGSS helps students grow in character, purpose and everyday responsibility.
+                            The community at RSRS helps everyone grow in character, purpose and everyday responsibility.
                         </p>
                     </div>
 
@@ -760,7 +759,7 @@
                     <div class="text-center mb-4">
                         <h2 class="section-title mb-2">Contact Information</h2>
                         <p class="section-intro mb-0">
-                            Reach us directly for admissions, school details or any question about the learning experience at HGSS.
+                            Reach us directly for supporting details or any question about the experience at RSRS.
                         </p>
                     </div>
 
@@ -814,7 +813,7 @@
                     </div>
 
                     <div class="about-cta-panel mt-4">
-                        <h2 class="mb-3">Ready to Join Henry Gogarty?</h2>
+                        <h2 class="mb-3">Ready to Join Road Safety Reporting System?</h2>
                         <p class="mb-0">
                             Explore admissions, connect with the school team and take the next step toward a strong academic journey.
                         </p>

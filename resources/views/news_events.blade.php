@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'News & Events - Henry Gogarty Secondary School')
+@section('title', 'News & Events - Road Safety Reporting System')
 
 @section('content')
     @php

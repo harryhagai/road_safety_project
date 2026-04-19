@@ -6,10 +6,10 @@
 
 <aside class="auth-brand-panel">
     <a href="{{ route('home') }}" class="auth-brand-mark">
-        <img src="{{ asset('img/hg-logo.png') }}" alt="HGSS Logo">
+        <img src="{{ asset('img/road-safety-favicon.svg') }}" alt="RSRS Logo">
         <span class="auth-brand-copy">
-            <strong>HGSS-SIMS</strong>
-            <span>Henry Gogarty Secondary School</span>
+            <strong>RSRS-DASHBOARD</strong>
+            <span>Road Safety Reporting System</span>
         </span>
     </a>
 

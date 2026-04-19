@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@yield('title', 'Henry Application')</title>
+    <title>@yield('title', 'Road Safety Reporting System')</title>
     <link rel="icon" type="image/svg+xml" href="{{ asset('img/road-safety-favicon.svg') }}">
 
     <!-- Bootstrap 5 CSS -->
