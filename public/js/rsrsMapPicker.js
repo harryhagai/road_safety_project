@@ -261,6 +261,7 @@
 
         root.mapApi = {
             map,
+            config,
             ensureSize,
             selectPoint: handleSelection,
             setUserLocation,

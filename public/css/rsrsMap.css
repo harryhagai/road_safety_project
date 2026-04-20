@@ -570,6 +570,120 @@
     box-shadow: 0 0 0 0.2rem rgba(31, 49, 79, 0.08);
 }
 
+.geo-map-search {
+    position: relative;
+    padding: 0 1rem 1rem;
+}
+
+.geo-map-search__label {
+    display: inline-block;
+    margin-bottom: 0.45rem;
+    color: #66758b;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.geo-map-search__input-wrap {
+    position: relative;
+}
+
+.geo-map-search__input-wrap .bi.bi-search {
+    position: absolute;
+    top: 50%;
+    left: 0.9rem;
+    transform: translateY(-50%);
+    color: #6a778d;
+    font-size: 0.9rem;
+}
+
+.geo-map-search__input-wrap .form-control {
+    height: 48px;
+    padding-left: 2.45rem;
+    padding-right: 2.65rem;
+    border-radius: 16px;
+    border-color: rgba(31, 49, 79, 0.14);
+    color: #1f314f;
+}
+
+.geo-map-search__input-wrap .form-control:focus {
+    border-color: rgba(31, 49, 79, 0.3);
+    box-shadow: 0 0 0 0.2rem rgba(31, 49, 79, 0.08);
+}
+
+.geo-map-search__clear {
+    position: absolute;
+    top: 50%;
+    right: 0.45rem;
+    transform: translateY(-50%);
+    border: 0;
+    background: transparent;
+    color: #6a778d;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.geo-map-search__clear:hover {
+    color: #1f314f;
+    background: rgba(31, 49, 79, 0.06);
+}
+
+.geo-map-search__status {
+    margin-top: 0.45rem;
+    color: #66758b;
+    font-size: 0.86rem;
+}
+
+.geo-map-search__results {
+    position: absolute;
+    z-index: 500;
+    top: calc(100% - 0.2rem);
+    left: 1rem;
+    right: 1rem;
+    max-height: 280px;
+    overflow-y: auto;
+    border: 1px solid rgba(31, 49, 79, 0.1);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 20px 45px rgba(31, 49, 79, 0.16);
+}
+
+.geo-map-search__result {
+    width: 100%;
+    padding: 0.85rem 0.95rem;
+    border: 0;
+    border-bottom: 1px solid rgba(31, 49, 79, 0.08);
+    background: #fff;
+    text-align: left;
+    transition: background 160ms ease;
+}
+
+.geo-map-search__result:last-child {
+    border-bottom: 0;
+}
+
+.geo-map-search__result:hover,
+.geo-map-search__result.is-active {
+    background: #f5f9ff;
+}
+
+.geo-map-search__result-title {
+    display: block;
+    color: #1f314f;
+    font-weight: 600;
+}
+
+.geo-map-search__result-meta {
+    display: block;
+    margin-top: 0.18rem;
+    color: #6a778d;
+    font-size: 0.84rem;
+}
+
 .geo-rule-browser__selection {
     display: grid;
     gap: 0.9rem;

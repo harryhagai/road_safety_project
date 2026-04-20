@@ -42,6 +42,9 @@ Route::get('/academic/dashboard', [OfficerDashboardController::class, 'index'])-
 Route::get('/maps/reverse-geocode', [MapController::class, 'reverseGeocode'])
     ->middleware('throttle:30,1')
     ->name('maps.reverse-geocode');
+Route::get('/maps/search', [MapController::class, 'search'])
+    ->middleware('throttle:60,1')
+    ->name('maps.search');
 
 Route::middleware('auth')->group(function () {
     Route::get('/road-officer/notifications', [OfficerNotificationController::class, 'index'])->name('officer.notifications.index');

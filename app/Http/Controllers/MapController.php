@@ -75,4 +75,68 @@ class MapController extends Controller
             'provider' => config('map.geocoder.provider'),
         ]);
     }
+
+    public function search(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'query' => ['required', 'string', 'min:2', 'max:255'],
+        ]);
+
+        $baseUrl = rtrim((string) config('map.geocoder.base_url'), '/');
+        $query = trim($validated['query']);
+
+        try {
+            $response = Http::timeout((int) config('map.geocoder.timeout'))
+                ->acceptJson()
+                ->withOptions([
+                    'verify' => config('map.geocoder.verify_ssl'),
+                ])
+                ->withHeaders([
+                    'User-Agent' => (string) config('map.geocoder.user_agent'),
+                ])
+                ->get($baseUrl . '/search', [
+                    'format' => 'jsonv2',
+                    'q' => $query,
+                    'limit' => max(1, (int) config('map.geocoder.search_limit', 5)),
+                    'addressdetails' => 1,
+                    'accept-language' => config('map.geocoder.language'),
+                    'email' => config('map.geocoder.email'),
+                ]);
+        } catch (ConnectionException) {
+            return response()->json([
+                'query' => $query,
+                'results' => [],
+                'provider' => config('map.geocoder.provider'),
+                'message' => 'Location search service could not be reached from this environment.',
+            ]);
+        }
+
+        if ($response->failed()) {
+            return response()->json([
+                'query' => $query,
+                'results' => [],
+                'provider' => config('map.geocoder.provider'),
+                'message' => 'Location search service is currently unavailable.',
+            ]);
+        }
+
+        $payload = collect($response->json())
+            ->filter(fn ($item) => is_array($item))
+            ->map(fn (array $item) => [
+                'display_name' => $item['display_name'] ?? null,
+                'lat' => isset($item['lat']) ? (float) $item['lat'] : null,
+                'lng' => isset($item['lon']) ? (float) $item['lon'] : null,
+                'address' => $item['address'] ?? [],
+                'type' => $item['type'] ?? null,
+                'class' => $item['class'] ?? null,
+            ])
+            ->filter(fn (array $item) => is_numeric($item['lat']) && is_numeric($item['lng']))
+            ->values();
+
+        return response()->json([
+            'query' => $query,
+            'results' => $payload,
+            'provider' => config('map.geocoder.provider'),
+        ]);
+    }
 }

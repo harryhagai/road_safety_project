@@ -127,6 +127,23 @@
         );
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function getSearchResultLabel(result) {
+        if (!result?.display_name) {
+            return 'Unknown location';
+        }
+
+        return String(result.display_name).split(',')[0].trim() || result.display_name;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const mapRoot = document.getElementById('roadSegmentMapLab');
 
@@ -149,10 +166,19 @@
         const lengthInput = document.getElementById('length_km');
         const modalElement = document.getElementById('createRoadSegmentModal');
         const segmentNameInput = document.getElementById('segment_name');
+        const locationSearchInput = document.getElementById('roadSegmentLocationSearch');
+        const locationSearchResults = document.getElementById('roadSegmentLocationSearchResults');
+        const locationSearchStatus = document.getElementById('roadSegmentLocationSearchStatus');
+        const locationSearchClear = document.getElementById('roadSegmentLocationSearchClear');
 
         const pointLayer = L.layerGroup().addTo(map);
         const existingLayer = L.layerGroup().addTo(map);
         let workingLine = null;
+        let searchDebounceHandle = null;
+        let searchController = null;
+        let searchSequence = 0;
+        let activeSearchResults = [];
+        let activeResultIndex = -1;
 
         if (segmentNameInput && !segmentNameInput.value.trim()) {
             segmentNameInput.dataset.autoSuggested = 'true';
@@ -257,6 +283,149 @@
             }
         }
 
+        function setSearchStatus(message) {
+            if (locationSearchStatus) {
+                locationSearchStatus.textContent = message;
+            }
+        }
+
+        function hideSearchResults() {
+            activeSearchResults = [];
+            activeResultIndex = -1;
+
+            if (locationSearchResults) {
+                locationSearchResults.hidden = true;
+                locationSearchResults.innerHTML = '';
+            }
+        }
+
+        function renderSearchResults(results) {
+            activeSearchResults = Array.isArray(results) ? results : [];
+            activeResultIndex = -1;
+
+            if (!locationSearchResults || activeSearchResults.length === 0) {
+                hideSearchResults();
+                return;
+            }
+
+            locationSearchResults.innerHTML = activeSearchResults
+                .map(function (result, index) {
+                    const title = getSearchResultLabel(result);
+                    const meta = result.display_name || 'Location result';
+
+                    return `
+                        <button type="button" class="geo-map-search__result" data-location-search-result-index="${index}">
+                            <span class="geo-map-search__result-title">${escapeHtml(title)}</span>
+                            <span class="geo-map-search__result-meta">${escapeHtml(meta)}</span>
+                        </button>
+                    `;
+                })
+                .join('');
+            locationSearchResults.hidden = false;
+        }
+
+        function updateHighlightedResult() {
+            if (!locationSearchResults) {
+                return;
+            }
+
+            locationSearchResults
+                .querySelectorAll('[data-location-search-result-index]')
+                .forEach(function (element, index) {
+                    element.classList.toggle('is-active', index === activeResultIndex);
+                });
+        }
+
+        function focusSearchResult(index) {
+            if (index < 0 || index >= activeSearchResults.length) {
+                activeResultIndex = -1;
+                updateHighlightedResult();
+                return;
+            }
+
+            activeResultIndex = index;
+            updateHighlightedResult();
+            locationSearchResults
+                ?.querySelector(`[data-location-search-result-index="${index}"]`)
+                ?.scrollIntoView({ block: 'nearest' });
+        }
+
+        function applySearchSelection(result) {
+            if (!result || typeof result.lat !== 'number' || typeof result.lng !== 'number') {
+                return;
+            }
+
+            mapRoot.mapApi.centerOn(result.lat, result.lng, 17, true);
+            mapRoot.mapApi.selectPoint(result.lat, result.lng);
+
+            if (locationSearchInput) {
+                locationSearchInput.value = result.display_name || '';
+            }
+
+            if (locationSearchClear) {
+                locationSearchClear.hidden = !locationSearchInput?.value.trim();
+            }
+
+            setSearchStatus('Location found. You can now continue clicking points on the map to trace the segment.');
+            hideSearchResults();
+        }
+
+        async function performLocationSearch(query) {
+            if (!locationSearchInput || !mapRoot.mapApi?.config?.searchUrl) {
+                return;
+            }
+
+            if (searchController) {
+                searchController.abort();
+            }
+
+            searchController = new AbortController();
+            searchSequence += 1;
+            const currentSequence = searchSequence;
+
+            setSearchStatus('Searching locations...');
+
+            try {
+                const response = await fetch(
+                    `${mapRoot.mapApi.config.searchUrl}?query=${encodeURIComponent(query)}`,
+                    {
+                        headers: {
+                            Accept: 'application/json',
+                        },
+                        signal: searchController.signal,
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to search locations.');
+                }
+
+                const payload = await response.json();
+
+                if (currentSequence !== searchSequence) {
+                    return;
+                }
+
+                const results = Array.isArray(payload.results) ? payload.results : [];
+
+                if (results.length === 0) {
+                    hideSearchResults();
+                    setSearchStatus(`No locations found for "${query}".`);
+                    return;
+                }
+
+                renderSearchResults(results);
+                setSearchStatus(`Found ${results.length} matching location${results.length === 1 ? '' : 's'}.`);
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    return;
+                }
+
+                hideSearchResults();
+                setSearchStatus('Location search failed. Please try again.');
+            }
+        }
+
         map.on('rsrs:point-selected', function (event) {
             if (typeof event.lat !== 'number' || typeof event.lng !== 'number') {
                 return;
@@ -314,6 +483,98 @@
 
         segmentNameInput?.addEventListener('input', function () {
             this.dataset.autoSuggested = this.value.trim() ? 'false' : 'true';
+        });
+
+        locationSearchInput?.addEventListener('input', function () {
+            const query = this.value.trim();
+
+            if (locationSearchClear) {
+                locationSearchClear.hidden = !query;
+            }
+
+            window.clearTimeout(searchDebounceHandle);
+
+            if (query.length < 2) {
+                if (searchController) {
+                    searchController.abort();
+                }
+
+                hideSearchResults();
+                setSearchStatus('Start typing to find a location and jump the map there.');
+                return;
+            }
+
+            searchDebounceHandle = window.setTimeout(function () {
+                performLocationSearch(query);
+            }, 180);
+        });
+
+        locationSearchInput?.addEventListener('keydown', function (event) {
+            if (!activeSearchResults.length) {
+                return;
+            }
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                focusSearchResult(
+                    activeResultIndex < activeSearchResults.length - 1 ? activeResultIndex + 1 : 0
+                );
+            }
+
+            if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                focusSearchResult(
+                    activeResultIndex > 0 ? activeResultIndex - 1 : activeSearchResults.length - 1
+                );
+            }
+
+            if (event.key === 'Enter' && activeResultIndex >= 0) {
+                event.preventDefault();
+                applySearchSelection(activeSearchResults[activeResultIndex]);
+            }
+
+            if (event.key === 'Escape') {
+                hideSearchResults();
+            }
+        });
+
+        locationSearchClear?.addEventListener('click', function () {
+            if (locationSearchInput) {
+                locationSearchInput.value = '';
+                locationSearchInput.focus();
+            }
+
+            this.hidden = true;
+            hideSearchResults();
+            setSearchStatus('Start typing to find a location and jump the map there.');
+        });
+
+        locationSearchResults?.addEventListener('click', function (event) {
+            const button = event.target.closest('[data-location-search-result-index]');
+
+            if (!button) {
+                return;
+            }
+
+            const index = Number(button.dataset.locationSearchResultIndex);
+
+            if (!Number.isInteger(index)) {
+                return;
+            }
+
+            applySearchSelection(activeSearchResults[index]);
+        });
+
+        document.addEventListener('click', function (event) {
+            if (
+                event.target === locationSearchInput ||
+                event.target === locationSearchClear ||
+                locationSearchResults?.contains(event.target)
+            ) {
+                return;
+            }
+
+            hideSearchResults();
         });
 
         document.querySelectorAll('[data-existing-segment]').forEach((button) => {

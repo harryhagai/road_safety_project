@@ -24,6 +24,7 @@ class MapConfigService
                 'attribution' => config('map.tiles.attribution'),
             ],
             'reverseGeocodeUrl' => route('maps.reverse-geocode'),
+            'searchUrl' => route('maps.search'),
             'provider' => config('map.geocoder.provider'),
         ];
     }

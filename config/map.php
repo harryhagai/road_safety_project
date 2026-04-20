@@ -24,6 +24,7 @@ return [
         'email' => env('MAP_GEOCODER_EMAIL'),
         'language' => env('MAP_GEOCODER_LANGUAGE', 'en'),
         'timeout' => (int) env('MAP_GEOCODER_TIMEOUT', 8),
+        'search_limit' => (int) env('MAP_GEOCODER_SEARCH_LIMIT', 5),
         'verify_ssl' => filter_var(env('MAP_GEOCODER_VERIFY_SSL', true), FILTER_VALIDATE_BOOL),
         'user_agent' => env('MAP_GEOCODER_USER_AGENT', env('APP_NAME', 'RSRS') . '/1.0'),
     ],

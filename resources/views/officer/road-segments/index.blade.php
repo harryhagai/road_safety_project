@@ -1,7 +1,8 @@
 @extends('layouts.officerDashboardLayout')
 
 @section('page_header_actions')
-    <button type="button" class="btn geo-header-btn" data-bs-toggle="modal" data-bs-target="#createRoadSegmentModal" id="openSegmentModalBtn">
+    <button type="button" class="btn geo-header-btn" data-bs-toggle="modal" data-bs-target="#createRoadSegmentModal"
+        id="openSegmentModalBtn">
         <i class="bi bi-plus-circle"></i>
         <span>New Segment</span>
     </button>
@@ -23,11 +24,34 @@
                     <div class="geo-card__header">
                         <div>
                             <h2 class="geo-card__title">Road segment mapping</h2>
-                            <p class="geo-card__text mb-0">Click points on the map to trace a road segment path.</p>
+                            <p class="geo-card__text mb-0">Search a location or click points on the map to trace a road segment path.</p>
                         </div>
                     </div>
 
-                    <x-map.canvas id="roadSegmentMapLab" :config="$mapConfig" height="calc(100vh - 235px)" :show-toolbar="false" mode="segment-builder" />
+                    <div class="geo-map-search">
+                        <label for="roadSegmentLocationSearch" class="geo-map-search__label">Find location</label>
+                        <div class="geo-map-search__input-wrap">
+                            <i class="bi bi-search"></i>
+                            <input
+                                type="search"
+                                id="roadSegmentLocationSearch"
+                                class="form-control"
+                                placeholder="Search place, road, ward, or landmark"
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                            <button type="button" class="btn geo-map-search__clear" id="roadSegmentLocationSearchClear" hidden>
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                        <div id="roadSegmentLocationSearchStatus" class="geo-map-search__status" aria-live="polite">
+                            Start typing to find a location and jump the map there.
+                        </div>
+                        <div id="roadSegmentLocationSearchResults" class="geo-map-search__results" hidden></div>
+                    </div>
+
+                    <x-map.canvas id="roadSegmentMapLab" :config="$mapConfig" height="calc(100vh - 235px)" :show-toolbar="false"
+                        mode="segment-builder" />
                 </section>
             </div>
 
@@ -36,7 +60,8 @@
                     <div class="geo-card__header">
                         <div>
                             <h2 class="geo-card__title">Segment details</h2>
-                            <p class="geo-card__text mb-0">Review the current selection and save it through the modal form.</p>
+                            <p class="geo-card__text mb-0">Review the current selection and save it through the modal form.
+                            </p>
                         </div>
                     </div>
 
@@ -72,11 +97,8 @@
 
                         <div class="geo-segment-list__body">
                             @forelse ($segments as $segment)
-                                <button
-                                    type="button"
-                                    class="geo-segment-item"
-                                    data-existing-segment='@json($segment)'
-                                >
+                                <button type="button" class="geo-segment-item"
+                                    data-existing-segment='@json($segment)'>
                                     <span class="geo-segment-item__title">{{ $segment['segment_name'] }}</span>
                                     <span class="geo-segment-item__meta">
                                         {{ $segment['segment_type'] ?: 'General segment' }}
@@ -95,7 +117,8 @@
         </div>
     </div>
 
-    <div class="modal fade" id="createRoadSegmentModal" tabindex="-1" aria-labelledby="createRoadSegmentModalLabel" aria-hidden="true">
+    <div class="modal fade" id="createRoadSegmentModal" tabindex="-1" aria-labelledby="createRoadSegmentModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content geo-modal">
                 <div class="modal-header geo-modal__header">
@@ -117,15 +140,9 @@
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
                                 <label for="segment_name" class="form-label">Segment name</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="segment_name"
-                                    name="segment_name"
-                                    value="{{ old('segment_name') }}"
-                                    placeholder="e.g. Morogoro Road - Ubungo stretch"
-                                    required
-                                >
+                                <input type="text" class="form-control" id="segment_name" name="segment_name"
+                                    value="{{ old('segment_name') }}" placeholder="e.g. Morogoro Road - Ubungo stretch"
+                                    required>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label for="segment_type" class="form-label">Segment type</label>
@@ -140,30 +157,19 @@
                             </div>
                             <div class="col-12">
                                 <label for="description" class="form-label">Description</label>
-                                <textarea
-                                    class="form-control"
-                                    id="description"
-                                    name="description"
-                                    rows="3"
-                                    placeholder="Optional notes about this road segment"
-                                >{{ old('description') }}</textarea>
+                                <textarea class="form-control" id="description" name="description" rows="3"
+                                    placeholder="Optional notes about this road segment">{{ old('description') }}</textarea>
                             </div>
                             <div class="col-12 col-md-6">
                                 <label for="length_km" class="form-label">Estimated length (km)</label>
-                                <input
-                                    type="number"
-                                    class="form-control"
-                                    id="length_km"
-                                    name="length_km"
-                                    value="{{ old('length_km') }}"
-                                    min="0"
-                                    step="0.01"
-                                    placeholder="Auto-filled from the map"
-                                >
+                                <input type="number" class="form-control" id="length_km" name="length_km"
+                                    value="{{ old('length_km') }}" min="0" step="0.01"
+                                    placeholder="Auto-filled from the map">
                             </div>
                             <div class="col-12 col-md-6">
                                 <label for="segment_point_summary" class="form-label">Selected points</label>
-                                <input type="text" class="form-control" id="segment_point_summary" value="0 points" readonly>
+                                <input type="text" class="form-control" id="segment_point_summary" value="0 points"
+                                    readonly>
                             </div>
                         </div>
 
