@@ -4,153 +4,7 @@
 @section('title', 'RSRS - Road Safety Reporting System')
 
 @push('critical-head')
-    <style>
-        body.home-loader-active {
-            overflow: hidden;
-            background: linear-gradient(160deg, #f4faff, #e0eeff);
-        }
-
-        .home-page-loader {
-            position: fixed;
-            inset: 0;
-            z-index: 2500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-            overflow: hidden;
-            background: linear-gradient(160deg, rgba(244, 250, 255, 0.94), rgba(224, 238, 255, 0.92));
-            backdrop-filter: blur(14px);
-            transition: opacity 280ms ease, visibility 280ms ease;
-        }
-
-        .home-page-loader.is-hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .home-page-loader__panel {
-            position: relative;
-            z-index: 1;
-            display: grid;
-            justify-items: center;
-            gap: 1.15rem;
-            width: min(100%, 460px);
-            padding: 2rem 1.6rem;
-            border: 1px solid rgba(31, 79, 167, 0.12);
-            border-radius: 30px;
-            background: rgba(255, 255, 255, 0.72);
-            box-shadow: 0 30px 80px rgba(31, 79, 167, 0.18);
-        }
-
-        .home-page-loader__brand {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 74px;
-            padding: 0.45rem 0.85rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.84);
-            border: 1px solid rgba(31, 112, 255, 0.15);
-            color: #1557c2;
-            font-size: 0.78rem;
-            font-weight: 800;
-            letter-spacing: 0.22em;
-            text-indent: 0.22em;
-        }
-
-        .home-page-loader__visual {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            display: grid;
-            place-items: center;
-        }
-
-        .home-page-loader__ring,
-        .home-page-loader__core {
-            position: absolute;
-            border-radius: 50%;
-        }
-
-        .home-page-loader__ring--outer {
-            inset: 0;
-            border: 2px solid rgba(31, 112, 255, 0.16);
-            animation: homePageLoaderSpin 3.8s linear infinite;
-        }
-
-        .home-page-loader__ring--middle {
-            inset: 16px;
-            border: 3px solid transparent;
-            border-top-color: #1f70ff;
-            border-right-color: rgba(94, 196, 238, 0.95);
-            animation: homePageLoaderSpin 1.25s linear infinite;
-        }
-
-        .home-page-loader__ring--inner {
-            inset: 34px;
-            border: 2px dashed rgba(21, 87, 194, 0.38);
-            animation: homePageLoaderSpinReverse 2s linear infinite;
-        }
-
-        .home-page-loader__core {
-            inset: 49px;
-            display: block;
-            background: radial-gradient(circle at 30% 30%, #ffffff, #8ed7f5 54%, #1f70ff 100%);
-            box-shadow: 0 0 0 10px rgba(31, 112, 255, 0.08), 0 18px 28px rgba(31, 79, 167, 0.2);
-            animation: homeLoaderPulse 1.5s ease-in-out infinite;
-        }
-
-        .home-page-loader__content {
-            display: grid;
-            gap: 0.45rem;
-            color: #173153;
-            text-align: center;
-            max-width: 30rem;
-        }
-
-        .home-page-loader__eyebrow {
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: #1557c2;
-        }
-
-        .home-page-loader__content strong {
-            font-size: clamp(1.25rem, 2.8vw, 2rem);
-            line-height: 1.15;
-        }
-
-        .home-page-loader__content span:last-child {
-            color: #58708f;
-            font-size: 0.98rem;
-            line-height: 1.5;
-        }
-
-        @keyframes homePageLoaderSpin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes homePageLoaderSpinReverse {
-            to {
-                transform: rotate(-360deg);
-            }
-        }
-
-        @keyframes homeLoaderPulse {
-            0%,
-            100% {
-                transform: scale(0.96);
-            }
-            50% {
-                transform: scale(1.04);
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/rsrsHomeLoader.css') }}?v={{ filemtime(public_path('css/rsrsHomeLoader.css')) }}">
 @endpush
 
 @push('page_loader')
@@ -182,6 +36,18 @@
             <div class="col-12">
                 <section class="geo-card geo-card--fill geo-card--map home-geo-card">
                     <div class="home-map-stage">
+                        <div class="home-speed-widget" data-home-speed-widget aria-live="polite">
+                            <span class="home-speed-widget__label">Speed</span>
+                            <div class="home-speed-widget__dial" aria-hidden="true">
+                                <span class="home-speed-widget__ring"></span>
+                                <span class="home-speed-widget__core"></span>
+                            </div>
+                            <div class="home-speed-widget__value">
+                                <strong data-home-speed-value>0</strong>
+                                <span>km/h</span>
+                            </div>
+                            <small data-home-speed-status>Waiting for movement...</small>
+                        </div>
                         <x-map.canvas id="mainPublicMap" :config="$mapConfig" height="100%" :show-toolbar="false" mode="viewer" />
                     </div>
                 </section>

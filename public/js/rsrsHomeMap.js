@@ -16,6 +16,47 @@
     let locationButton = null;
     let zoomToUserOnNextFix = false;
     let locationViewMode = 'idle';
+    let speedWidget = null;
+    let speedValueEl = null;
+    let speedStatusEl = null;
+
+    function cacheSpeedWidget() {
+        if (speedWidget) return;
+
+        speedWidget = document.querySelector('[data-home-speed-widget]');
+        speedValueEl = document.querySelector('[data-home-speed-value]');
+        speedStatusEl = document.querySelector('[data-home-speed-status]');
+    }
+
+    function updateSpeedDisplay(speedKmh, statusText, isLive) {
+        cacheSpeedWidget();
+        if (!speedWidget || !speedValueEl || !speedStatusEl) return;
+
+        const safeSpeed = Number.isFinite(speedKmh) ? Math.max(0, speedKmh) : 0;
+        speedValueEl.textContent = String(Math.round(safeSpeed));
+        speedStatusEl.textContent = statusText;
+        speedWidget.classList.toggle('is-live', Boolean(isLive));
+        speedWidget.classList.toggle('is-idle', !isLive);
+    }
+
+    function resolveSpeedKmh(position, now, currentPoint) {
+        const directSpeed = Number(position.coords.speed);
+        if (Number.isFinite(directSpeed) && directSpeed >= 0) {
+            return directSpeed * 3.6;
+        }
+
+        if (!lastTrackedPoint || !lastTrackTimestamp) {
+            return 0;
+        }
+
+        const movedMeters = distanceInMeters(lastTrackedPoint, currentPoint);
+        const elapsedSeconds = (now - lastTrackTimestamp) / 1000;
+        if (elapsedSeconds <= 0) {
+            return 0;
+        }
+
+        return (movedMeters / elapsedSeconds) * 3.6;
+    }
 
     function setLocationButtonMode(mode) {
         if (!locationButton) return;
@@ -114,10 +155,13 @@
         const accuracy = Number(position.coords.accuracy);
         const now = Date.now();
         const currentPoint = { lat: latitude, lng: longitude };
+        const speedKmh = resolveSpeedKmh(position, now, currentPoint);
+        const isMoving = speedKmh >= 1;
 
         if (lastTrackedPoint) {
             const movedMeters = distanceInMeters(lastTrackedPoint, currentPoint);
             if (movedMeters < 5 && now - lastTrackTimestamp < 1200) {
+                updateSpeedDisplay(speedKmh, isMoving ? 'Live movement detected' : 'Waiting for movement...', isMoving);
                 return;
             }
         }
@@ -128,6 +172,7 @@
         mapInterface.selectPoint(latitude, longitude, { resolveLocation: false });
         mapInterface.setUserLocation?.(latitude, longitude, { accuracy });
         setLocatingState(false);
+        updateSpeedDisplay(speedKmh, isMoving ? 'Live movement detected' : 'You look stationary', isMoving);
 
         if (zoomToUserOnNextFix) {
             flyToUser(latitude, longitude, locationViewMode);
@@ -171,6 +216,7 @@
         if (!force && watchId !== null) return;
 
         setLocatingState(true);
+        updateSpeedDisplay(0, 'Checking GPS speed...', false);
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -185,6 +231,7 @@
                     },
                     () => {
                         setLocatingState(false);
+                        updateSpeedDisplay(0, 'Speed unavailable right now', false);
                         startWatch(false);
                     },
                     { enableHighAccuracy: false, timeout: 8000, maximumAge: 15000 }
@@ -197,6 +244,8 @@
     function initWhenMapReady() {
         const mapEl = document.getElementById('mainPublicMap');
         if (!mapEl) return;
+        cacheSpeedWidget();
+        updateSpeedDisplay(0, 'Waiting for movement...', false);
 
         const wireUp = () => {
             if (!mapEl.mapApi) return;

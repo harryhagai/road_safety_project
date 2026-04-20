@@ -35,9 +35,13 @@
     function createUserLocationIcon() {
         return L.divIcon({
             className: 'geo-map-user-marker',
-            html: '<span class="geo-map-user-marker__pin"><i class="bi bi-geo-alt-fill" aria-hidden="true"></i></span>',
-            iconSize: [30, 30],
-            iconAnchor: [15, 30],
+            html: `
+                <span class="geo-map-user-marker__pulse"></span>
+                <span class="geo-map-user-marker__halo"></span>
+                <span class="geo-map-user-marker__pin"></span>
+            `,
+            iconSize: [44, 44],
+            iconAnchor: [22, 22],
         });
     }
 
@@ -245,9 +249,11 @@
                 if (!userAccuracyCircle) {
                     userAccuracyCircle = L.circle([lat, lng], {
                         radius: clampedAccuracy,
-                        stroke: false,
+                        color: '#1f70ff',
+                        weight: 1,
+                        opacity: 0.28,
                         fillColor: '#1f70ff',
-                        fillOpacity: 0.16,
+                        fillOpacity: 0.1,
                         interactive: false,
                     }).addTo(map);
                 } else {
