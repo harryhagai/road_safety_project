@@ -554,19 +554,46 @@ main.flex-grow-1 {
 }
 
 @media (max-width: 575.98px) {
-    .home-speed-widget {
-        bottom: 2.85rem;
-        left: 0.7rem;
-        min-width: 146px;
-        max-width: 168px;
-        padding: 0.62rem 0.68rem;
+    main.flex-grow-1 {
+        padding-top: var(--home-header-height);
+        padding-bottom: var(--home-footer-height);
+    }
+
+    .home-geo-workspace {
+        width: 100%;
+        max-width: 100%;
+        min-height: calc(100svh - var(--home-header-height) - var(--home-footer-height));
+        padding: 0 !important;
+    }
+
+    .home-geo-card {
+        width: 100%;
+        height: calc(100svh - var(--home-header-height) - var(--home-footer-height));
+        min-height: 0;
+        padding: 0.35rem;
+        border-radius: 0;
+    }
+
+    .home-map-stage,
+    .home-geo-card #mainPublicMap,
+    .home-geo-card .geo-map-canvas {
+        min-height: 0;
         border-radius: 16px;
-        column-gap: 0.62rem;
+    }
+
+    .home-speed-widget {
+        bottom: 2.75rem;
+        left: 0.35rem;
+        min-width: 164px;
+        max-width: 188px;
+        padding: 0.68rem 0.75rem;
+        border-radius: 16px;
+        column-gap: 0.68rem;
     }
 
     .home-speed-widget__dial {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
     }
 
     .home-speed-widget__core {
@@ -574,31 +601,57 @@ main.flex-grow-1 {
     }
 
     .home-speed-widget__value strong {
-        font-size: 1.08rem;
+        font-size: 1.16rem;
     }
 
     .home-speed-widget small {
-        font-size: 0.58rem;
+        font-size: 0.6rem;
     }
 
     .home-location-control__button {
         width: 48px;
         height: 48px;
         border-radius: 16px;
-        font-size: 1.05rem;
+        font-size: 1.08rem;
     }
 
     .home-geo-card .leaflet-bottom.leaflet-right .leaflet-control {
-        margin-right: 0.75rem;
+        margin-right: 0.35rem;
     }
 
     .home-geo-card .leaflet-bottom.leaflet-right .leaflet-control:last-child {
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .home-geo-card .home-location-control.leaflet-bar {
+        margin-bottom: 0.42rem;
     }
 
     .home-geo-card .leaflet-control-zoom a {
         width: 48px;
         height: 42px;
+    }
+
+    .home-geo-card .leaflet-control-attribution {
+        max-width: calc(100vw - 11.5rem);
+        padding: 0.18rem 0.34rem;
+        border-radius: 8px 0 0 0;
+        font-size: 0.66rem;
+        line-height: 1.15;
+        white-space: normal;
+        text-align: right;
+    }
+
+    .home-geo-card .leaflet-control-scale {
+        margin-left: 0.35rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .home-geo-card .leaflet-control-scale-line {
+        padding: 0.1rem 0.32rem 0.03rem;
+        border-radius: 0 0 6px 6px;
+        font-size: 0.68rem;
+        background: rgba(255, 255, 255, 0.9);
     }
 
     .home-page-loader {
