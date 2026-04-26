@@ -34,8 +34,10 @@
         if (!speedWidget || !speedValueEl || !speedStatusEl) return;
 
         const safeSpeed = Number.isFinite(speedKmh) ? Math.max(0, speedKmh) : 0;
+        const ringDuration = Math.max(0.45, 3.2 - Math.min(safeSpeed, 120) / 42);
         speedValueEl.textContent = String(Math.round(safeSpeed));
         speedStatusEl.textContent = statusText;
+        speedWidget.style.setProperty('--home-speed-ring-duration', `${ringDuration.toFixed(2)}s`);
         speedWidget.classList.toggle('is-live', Boolean(isLive));
         speedWidget.classList.toggle('is-idle', !isLive);
     }
