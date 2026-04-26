@@ -84,7 +84,9 @@
 
         const isDetail = mode === 'detail';
         locationButton.classList.toggle('is-detail-view', isDetail);
-        locationButton.title = isDetail ? 'Switch to wider location view' : 'Use my current location';
+        const buttonTitle = isDetail ? 'Switch to wider location view' : 'Use my current location';
+        locationButton.title = buttonTitle;
+        locationButton.setAttribute('aria-label', buttonTitle);
     }
 
     function getNextLocationViewMode() {
@@ -121,12 +123,13 @@
         if (!mapInterface?.map || locationButton) return;
 
         const LocationControl = L.Control.extend({
-            options: { position: 'topright' },
+            options: { position: 'bottomright' },
             onAdd: function () {
                 const container = L.DomUtil.create('div', 'leaflet-bar home-location-control');
                 const button = L.DomUtil.create('button', 'home-location-control__button', container);
                 button.type = 'button';
                 button.title = 'Use my current location';
+                button.setAttribute('aria-label', 'Use my current location');
                 button.innerHTML = '<i class="bi bi-geo-alt-fill" aria-hidden="true"></i>';
                 locationButton = button;
 
@@ -151,7 +154,17 @@
             },
         });
 
-        mapInterface.map.addControl(new LocationControl());
+        const control = new LocationControl();
+        control.addTo(mapInterface.map);
+
+        const container = control.getContainer();
+        const corner = container?.parentElement;
+        const zoomControl = corner?.querySelector('.leaflet-control-zoom');
+        if (corner && zoomControl) {
+            corner.insertBefore(container, zoomControl);
+        }
+
+        setLocationButtonMode(locationViewMode);
     }
 
     function distanceInMeters(a, b) {

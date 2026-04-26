@@ -41,6 +41,7 @@
                             <div class="home-speed-widget__dial" aria-hidden="true">
                                 <span class="home-speed-widget__ring"></span>
                                 <span class="home-speed-widget__core"></span>
+                                <span class="home-speed-widget__pulse"></span>
                             </div>
                             <div class="home-speed-widget__value">
                                 <strong data-home-speed-value>0</strong>
