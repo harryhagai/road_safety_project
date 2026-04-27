@@ -19,6 +19,7 @@
 
 
     <!-- Custom CSS -->
+    <link href="{{ asset('css/themeColor.css') }}" rel="stylesheet">
     <link href="{{ asset('css/rsrsPublicHeader.css') }}" rel="stylesheet">
     <link href="{{ asset('css/rsrsPublicFooter.css') }}" rel="stylesheet">
     <link href="{{ asset('css/rsrsHome.css') }}" rel="stylesheet">

@@ -1,3 +1,5 @@
+@import url('./themeColor.css');
+
 :root {
   --sidebar-width: 210px;
   --sidebar-collapsed-width: 82px;

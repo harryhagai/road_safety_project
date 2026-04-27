@@ -1,3 +1,5 @@
+@import url('./themeColor.css');
+
 .contact-messages-shell,
 .contact-message-detail-card {
     background: #fff;

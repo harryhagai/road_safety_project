@@ -1,3 +1,5 @@
+@import url('./themeColor.css');
+
 body.home-loader-active {
     overflow: hidden;
     background:

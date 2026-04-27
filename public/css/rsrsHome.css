@@ -1,3 +1,5 @@
+@import url('./themeColor.css');
+
 :root {
     --color-white: #ffffff;
     --color-surface: #f3fbff;

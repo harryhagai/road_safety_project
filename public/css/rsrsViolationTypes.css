@@ -1,3 +1,5 @@
+@import url('./themeColor.css');
+
 .violation-shell {
     background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
     border: 1px solid rgba(31, 49, 79, 0.08);

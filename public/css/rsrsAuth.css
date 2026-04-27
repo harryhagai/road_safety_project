@@ -1,17 +1,18 @@
+@import url('./themeColor.css');
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --auth-primary: #1098d4;
-    --auth-primary-dark: #0d6f9b;
-    --auth-secondary: #197fb8;
-    --auth-accent: #5ec4ee;
-    --auth-primary-soft: #f3fbff;
-    --auth-primary-soft-alt: #e4f5ff;
-    --auth-text: #102f45;
-    --auth-muted: #516d80;
-    --auth-border: rgba(16, 152, 212, 0.16);
+    --auth-primary: var(--theme-navy);
+    --auth-primary-dark: var(--theme-navy-dark);
+    --auth-secondary: var(--theme-navy-soft);
+    --auth-accent: var(--theme-gold);
+    --auth-primary-soft: var(--theme-blue-soft);
+    --auth-primary-soft-alt: var(--theme-page-bg);
+    --auth-text: var(--theme-text);
+    --auth-muted: var(--theme-text-muted);
+    --auth-border: var(--theme-border);
     --auth-surface: rgba(255, 255, 255, 0.92);
-    --auth-shadow: 0 24px 60px rgba(13, 111, 155, 0.14);
+    --auth-shadow: var(--theme-shadow);
 }
 
 .auth-layout-body {

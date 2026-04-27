@@ -1,3 +1,5 @@
+@import url('./themeColor.css');
+
 .rs-map-wrapper {
     position: relative;
     width: 100%;
