@@ -38,6 +38,7 @@
             html: `
                 <span class="geo-map-user-marker__pulse"></span>
                 <span class="geo-map-user-marker__halo"></span>
+                <span class="geo-map-user-marker__heading"></span>
                 <span class="geo-map-user-marker__pin"></span>
             `,
             iconSize: [44, 44],
@@ -231,6 +232,7 @@
 
         function setUserLocation(lat, lng, options = {}) {
             const accuracy = Number(options.accuracy);
+            const heading = Number(options.heading);
 
             if (!userLocationMarker) {
                 userLocationMarker = L.marker([lat, lng], {
@@ -241,6 +243,15 @@
                 }).addTo(map);
             } else {
                 userLocationMarker.setLatLng([lat, lng]);
+            }
+
+            const markerEl = userLocationMarker.getElement();
+            if (markerEl) {
+                const hasHeading = Number.isFinite(heading);
+                markerEl.classList.toggle('has-heading', hasHeading);
+                if (hasHeading) {
+                    markerEl.style.setProperty('--geo-user-heading', `${heading}deg`);
+                }
             }
 
             if (Number.isFinite(accuracy) && accuracy > 0) {

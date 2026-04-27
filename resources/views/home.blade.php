@@ -10,7 +10,7 @@
 @push('page_loader')
     <div class="home-page-loader" id="homePageLoader" data-home-map-loader role="status" aria-live="polite">
         <div class="home-page-loader__panel">
-            <div class="home-page-loader__brand">RSRS</div>
+            <div class="home-page-loader__brand">rsrs</div>
             <div class="home-page-loader__visual" aria-hidden="true">
                 <span class="home-page-loader__ring home-page-loader__ring--outer"></span>
                 <span class="home-page-loader__ring home-page-loader__ring--middle"></span>
@@ -18,9 +18,9 @@
                 <span class="home-page-loader__core"></span>
             </div>
             <div class="home-page-loader__content">
-                <span class="home-page-loader__eyebrow">Road Safety Reporting System</span>
-                <strong>Loading the live map...</strong>
-                <span>Preparing location, layers, and your first view.</span>
+                <span class="home-page-loader__eyebrow">road safety reporting system</span>
+                <span class="home-page-loader__message">loading the live map...</span>
+                <span>preparing location, layers, and your first view.</span>
             </div>
         </div>
     </div>

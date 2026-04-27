@@ -183,6 +183,18 @@
         return 2 * earthRadius * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
     }
 
+    function bearingDegrees(a, b) {
+        const toRad = (value) => (value * Math.PI) / 180;
+        const toDeg = (value) => (value * 180) / Math.PI;
+        const lat1 = toRad(a.lat);
+        const lat2 = toRad(b.lat);
+        const dLng = toRad(b.lng - a.lng);
+        const y = Math.sin(dLng) * Math.cos(lat2);
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+
+        return (toDeg(Math.atan2(y, x)) + 360) % 360;
+    }
+
     function applyPosition(position) {
         if (!mapInterface) return;
 
@@ -193,9 +205,15 @@
         const currentPoint = { lat: latitude, lng: longitude };
         const speedKmh = resolveSpeedKmh(position, now, currentPoint);
         const isMoving = speedKmh >= 1;
+        const movedMeters = lastTrackedPoint ? distanceInMeters(lastTrackedPoint, currentPoint) : 0;
+        const gpsHeading = Number(position.coords.heading);
+        const heading = Number.isFinite(gpsHeading) && gpsHeading >= 0
+            ? gpsHeading
+            : lastTrackedPoint && movedMeters >= 3
+                ? bearingDegrees(lastTrackedPoint, currentPoint)
+                : null;
 
         if (lastTrackedPoint) {
-            const movedMeters = distanceInMeters(lastTrackedPoint, currentPoint);
             if (movedMeters < 5 && now - lastTrackTimestamp < 1200) {
                 updateSpeedDisplay(speedKmh, isMoving ? 'Live movement detected' : 'Waiting for movement...', isMoving);
                 return;
@@ -206,7 +224,7 @@
         lastTrackTimestamp = now;
 
         mapInterface.selectPoint(latitude, longitude, { resolveLocation: false });
-        mapInterface.setUserLocation?.(latitude, longitude, { accuracy });
+        mapInterface.setUserLocation?.(latitude, longitude, { accuracy, heading });
         setLocatingState(false);
         updateSpeedDisplay(speedKmh, isMoving ? 'Live movement detected' : 'You look stationary', isMoving);
         publishLocationReady(position, speedKmh);
