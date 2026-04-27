@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\ContactMessage;
 use App\Models\EvidenceFile;
 use App\Models\Hotspot;
 use App\Models\Officer;
@@ -18,6 +19,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
@@ -43,9 +45,11 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Schema::defaultStringLength(191);
+        Paginator::useBootstrapFive();
 
         User::observe(SensitiveActivityObserver::class);
         Officer::observe(SensitiveActivityObserver::class);
+        ContactMessage::observe(SensitiveActivityObserver::class);
         Report::observe(SensitiveActivityObserver::class);
         RoadRule::observe(SensitiveActivityObserver::class);
         RoadSegment::observe(SensitiveActivityObserver::class);

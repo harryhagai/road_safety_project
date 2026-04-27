@@ -51,6 +51,10 @@
                 'title' => 'Hotspots',
                 'subtitle' => 'Track dangerous areas, severity trends, and recurring incident locations.',
             ],
+            request()->is('road-officer/contact-messages*') => [
+                'title' => 'Contact Messages',
+                'subtitle' => 'Review public enquiries, update response progress, and keep support history organised.',
+            ],
             request()->is('road-officer/officers*') || request()->is('academic/teachers*') => [
                 'title' => 'Officers',
                 'subtitle' => 'Manage officer accounts, roles, and operational access across the system.',

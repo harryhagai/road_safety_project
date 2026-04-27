@@ -222,6 +222,7 @@
 
                                 <form method="POST" action="{{ route('contact.store') }}">
                                     @csrf
+                                    <input type="text" name="website" class="d-none" tabindex="-1" autocomplete="off" aria-hidden="true">
 
                                     <div class="row g-3">
                                         <div class="col-md-6">

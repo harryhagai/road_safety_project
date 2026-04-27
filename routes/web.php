@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\MapController;
+use App\Http\Controllers\officer\ContactMessageController as OfficerContactMessageController;
 use App\Http\Controllers\officer\OfficerDashboardController;
 use App\Http\Controllers\officer\OfficerNotificationController;
 use App\Http\Controllers\officer\OfficerProfileController;
@@ -34,7 +36,10 @@ foreach ($routeFiles as $routeFile) {
 Route::view('/', 'home')->name('home');
 Route::view('/home', 'home');
 Route::view('/about', 'about')->name('about');
-Route::view('/contact', 'contact')->name('contact');
+Route::get('/contact', [ContactMessageController::class, 'create'])->name('contact');
+Route::post('/contact', [ContactMessageController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('contact.store');
 Route::view('/departments', 'departments')->name('departments');
 Route::view('/developer', 'developer')->name('developer');
 Route::view('/news-events', 'news_events')->name('news-events');
@@ -52,6 +57,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/road-officer/notifications/dropdown-data', [OfficerNotificationController::class, 'dropdownData'])->name('officer.notifications.dropdown-data');
     Route::post('/road-officer/notifications/mark-all-read', [OfficerNotificationController::class, 'markAllRead'])->name('officer.notifications.mark-all-read');
     Route::get('/road-officer/notifications/{notificationId}', [OfficerNotificationController::class, 'show'])->name('officer.notifications.show');
+    Route::get('/road-officer/contact-messages', [OfficerContactMessageController::class, 'index'])->name('officer.contact-messages.index');
+    Route::get('/road-officer/contact-messages/{contactMessage}', [OfficerContactMessageController::class, 'show'])->name('officer.contact-messages.show');
+    Route::put('/road-officer/contact-messages/{contactMessage}', [OfficerContactMessageController::class, 'update'])->name('officer.contact-messages.update');
+    Route::delete('/road-officer/contact-messages/{contactMessage}', [OfficerContactMessageController::class, 'destroy'])->name('officer.contact-messages.destroy');
     Route::get('/road-officer/road-rules', [RoadRuleController::class, 'index'])->name('officer.road-rules.index');
     Route::get('/road-officer/road-rules/data', [RoadRuleController::class, 'data'])->name('officer.road-rules.data');
     Route::post('/road-officer/road-rules', [RoadRuleController::class, 'store'])->name('officer.road-rules.store');

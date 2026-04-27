@@ -7,6 +7,7 @@
         request()->is('road-officer/evidence-files*') ||
         request()->is('road-officer/rule-violations*');
     $isMonitoringMenuOpen = request()->is('road-officer/hotspots*') ||
+        request()->is('road-officer/contact-messages*') ||
         request()->is('road-officer/notifications*');
     $isAdministrationMenuOpen = request()->is('road-officer/officers*') ||
         request()->is('road-officer/settings*') ||
@@ -125,6 +126,12 @@
                             <a href="{{ url('/road-officer/hotspots') }}"
                                 class="nav-link officer-sidebar-sub-link {{ request()->is('road-officer/hotspots*') ? 'active is-current fw-bold shadow-sm' : '' }}">
                                 <i class="bi bi-pin-map"></i> Hotspots
+                            </a>
+                        </li>
+                        <li class="nav-item mb-1">
+                            <a href="{{ route('officer.contact-messages.index') }}"
+                                class="nav-link officer-sidebar-sub-link {{ request()->is('road-officer/contact-messages*') ? 'active is-current fw-bold shadow-sm' : '' }}">
+                                <i class="bi bi-envelope-paper"></i> Contact Messages
                             </a>
                         </li>
                         <li class="nav-item mb-1">
