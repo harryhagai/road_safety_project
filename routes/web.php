@@ -7,6 +7,7 @@ use App\Http\Controllers\officer\ContactMessageController as OfficerContactMessa
 use App\Http\Controllers\officer\OfficerDashboardController;
 use App\Http\Controllers\officer\OfficerNotificationController;
 use App\Http\Controllers\officer\OfficerProfileController;
+use App\Http\Controllers\officer\OfficerReportController;
 use App\Http\Controllers\officer\RoadSegmentController;
 use App\Http\Controllers\officer\RoadRuleController;
 use App\Http\Controllers\officer\SegmentTypeController;
@@ -70,6 +71,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/road-officer/contact-messages/{contactMessage}', [OfficerContactMessageController::class, 'show'])->name('officer.contact-messages.show');
     Route::put('/road-officer/contact-messages/{contactMessage}', [OfficerContactMessageController::class, 'update'])->name('officer.contact-messages.update');
     Route::delete('/road-officer/contact-messages/{contactMessage}', [OfficerContactMessageController::class, 'destroy'])->name('officer.contact-messages.destroy');
+    Route::get('/road-officer/reports', [OfficerReportController::class, 'index'])->name('officer.reports.index');
+    Route::get('/road-officer/reports/{report}', [OfficerReportController::class, 'show'])->name('officer.reports.show');
+    Route::put('/road-officer/reports/{report}', [OfficerReportController::class, 'update'])->name('officer.reports.update');
     Route::get('/road-officer/road-rules', [RoadRuleController::class, 'index'])->name('officer.road-rules.index');
     Route::get('/road-officer/road-rules/data', [RoadRuleController::class, 'data'])->name('officer.road-rules.data');
     Route::post('/road-officer/road-rules', [RoadRuleController::class, 'store'])->name('officer.road-rules.store');
