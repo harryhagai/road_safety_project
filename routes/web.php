@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ContactMessageController;
+use App\Http\Controllers\AutoSpeedReportController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\officer\ContactMessageController as OfficerContactMessageController;
 use App\Http\Controllers\officer\OfficerDashboardController;
@@ -53,6 +54,12 @@ Route::get('/maps/reverse-geocode', [MapController::class, 'reverseGeocode'])
 Route::get('/maps/search', [MapController::class, 'search'])
     ->middleware('throttle:60,1')
     ->name('maps.search');
+Route::post('/auto-speed-reports/evaluate', [AutoSpeedReportController::class, 'evaluate'])
+    ->middleware('throttle:180,1')
+    ->name('auto-speed-reports.evaluate');
+Route::post('/auto-speed-reports', [AutoSpeedReportController::class, 'store'])
+    ->middleware('throttle:12,1')
+    ->name('auto-speed-reports.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/road-officer/notifications', [OfficerNotificationController::class, 'index'])->name('officer.notifications.index');

@@ -1,0 +1,370 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Report;
+use App\Models\RoadRule;
+use App\Models\RuleViolation;
+use App\Models\ViolationType;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class AutoSpeedReportController extends Controller
+{
+    private const REQUIRED_EXCEEDED_SECONDS = 30;
+    private const DUPLICATE_WINDOW_SECONDS = 600;
+    private const BASE_SEGMENT_TOLERANCE_METERS = 45;
+    private const MAX_SEGMENT_TOLERANCE_METERS = 120;
+
+    public function evaluate(Request $request): JsonResponse
+    {
+        $validated = $this->validateTelemetry($request);
+        $accuracy = (float) ($validated['accuracy'] ?? self::BASE_SEGMENT_TOLERANCE_METERS);
+        $match = $this->matchSpeedRule(
+            (float) $validated['latitude'],
+            (float) $validated['longitude'],
+            $accuracy
+        );
+
+        if (! $match) {
+            $this->clearExceededSession();
+
+            return response()->json([
+                'matched' => false,
+                'message' => 'No monitored speed segment nearby.',
+            ]);
+        }
+
+        $speedKmh = (float) $validated['speed_kmh'];
+        $exceeded = $speedKmh > $match['speed_limit_kmh'];
+        $sessionKey = $this->exceededSessionKey($match['rule']->id);
+
+        if ($exceeded) {
+            $startedAt = session($sessionKey);
+
+            if (! is_numeric($startedAt)) {
+                $startedAt = now()->timestamp;
+                session()->put($sessionKey, $startedAt);
+            }
+        } else {
+            session()->forget($sessionKey);
+            $startedAt = null;
+        }
+
+        $exceededSeconds = $startedAt ? max(0, now()->timestamp - (int) $startedAt) : 0;
+
+        return response()->json([
+            'matched' => true,
+            'exceeded' => $exceeded,
+            'can_submit' => $exceeded && $exceededSeconds >= self::REQUIRED_EXCEEDED_SECONDS,
+            'exceeded_seconds' => $exceededSeconds,
+            'required_seconds' => self::REQUIRED_EXCEEDED_SECONDS,
+            'distance_meters' => round($match['distance_meters'], 1),
+            'speed_kmh' => round($speedKmh, 1),
+            'speed_limit_kmh' => $match['speed_limit_kmh'],
+            'segment' => [
+                'id' => $match['segment']->id,
+                'name' => $match['segment']->segment_name,
+            ],
+            'rule' => [
+                'id' => $match['rule']->id,
+                'name' => $match['rule']->rule_name,
+                'value' => $match['rule']->rule_value,
+            ],
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $this->validateTelemetry($request) + $request->validate([
+            'rule_id' => ['required', 'integer', 'exists:road_rules,id'],
+            'segment_id' => ['required', 'integer', 'exists:road_segments,id'],
+        ]);
+        $accuracy = (float) ($validated['accuracy'] ?? self::BASE_SEGMENT_TOLERANCE_METERS);
+
+        $match = $this->matchSpeedRule(
+            (float) $validated['latitude'],
+            (float) $validated['longitude'],
+            $accuracy
+        );
+
+        if (! $match || (int) $validated['rule_id'] !== (int) $match['rule']->id || (int) $validated['segment_id'] !== (int) $match['segment']->id) {
+            return response()->json([
+                'reported' => false,
+                'reason' => 'rule_mismatch',
+                'message' => 'The current location no longer matches that speed rule.',
+            ], 409);
+        }
+
+        $speedKmh = (float) $validated['speed_kmh'];
+
+        if ($speedKmh <= $match['speed_limit_kmh']) {
+            session()->forget($this->exceededSessionKey($match['rule']->id));
+
+            return response()->json([
+                'reported' => false,
+                'reason' => 'speed_within_limit',
+                'message' => 'The current speed is within the saved limit.',
+            ], 409);
+        }
+
+        $startedAt = session($this->exceededSessionKey($match['rule']->id));
+        $exceededSeconds = is_numeric($startedAt) ? max(0, now()->timestamp - (int) $startedAt) : 0;
+
+        if ($exceededSeconds < self::REQUIRED_EXCEEDED_SECONDS) {
+            return response()->json([
+                'reported' => false,
+                'reason' => 'duration_pending',
+                'exceeded_seconds' => $exceededSeconds,
+                'required_seconds' => self::REQUIRED_EXCEEDED_SECONDS,
+            ], 409);
+        }
+
+        $duplicate = session($this->reportedSessionKey($match['rule']->id));
+        if (is_array($duplicate) && now()->timestamp - (int) ($duplicate['reported_at'] ?? 0) < self::DUPLICATE_WINDOW_SECONDS) {
+            return response()->json([
+                'reported' => true,
+                'duplicate' => true,
+                'reference_no' => $duplicate['reference_no'] ?? null,
+            ]);
+        }
+
+        $report = DB::transaction(function () use ($validated, $match, $speedKmh, $exceededSeconds) {
+            $violationType = ViolationType::firstOrCreate(
+                ['name' => 'Overspeeding'],
+                [
+                    'description' => 'Vehicle operating beyond the allowed speed limit.',
+                    'is_active' => true,
+                ]
+            );
+
+            $report = Report::create([
+                'reference_no' => $this->makeReferenceNumber(),
+                'violation_type_id' => $violationType->id,
+                'description' => sprintf(
+                    'Automatic overspeeding report: %.1f km/h recorded against a %.0f km/h speed limit for %d seconds on %s.',
+                    $speedKmh,
+                    $match['speed_limit_kmh'],
+                    $exceededSeconds,
+                    $match['segment']->segment_name
+                ),
+                'latitude' => $validated['latitude'],
+                'longitude' => $validated['longitude'],
+                'location_name' => $match['segment']->segment_name,
+                'status' => 'submitted',
+                'priority' => $this->priorityForSpeed($speedKmh, $match['speed_limit_kmh']),
+                'reported_at' => now(),
+            ]);
+
+            RuleViolation::create([
+                'report_id' => $report->id,
+                'rule_id' => $match['rule']->id,
+                'matched_automatically' => true,
+                'confidence_score' => $this->confidenceForDistance($match['distance_meters']),
+            ]);
+
+            return $report;
+        });
+
+        session()->put($this->reportedSessionKey($match['rule']->id), [
+            'reference_no' => $report->reference_no,
+            'reported_at' => now()->timestamp,
+        ]);
+        session()->forget($this->exceededSessionKey($match['rule']->id));
+
+        return response()->json([
+            'reported' => true,
+            'duplicate' => false,
+            'reference_no' => $report->reference_no,
+        ], 201);
+    }
+
+    private function validateTelemetry(Request $request): array
+    {
+        return $request->validate([
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
+            'speed_kmh' => ['required', 'numeric', 'min:0', 'max:320'],
+            'accuracy' => ['nullable', 'numeric', 'min:0', 'max:1000'],
+            'heading' => ['nullable', 'numeric', 'min:0', 'max:360'],
+        ]);
+    }
+
+    private function matchSpeedRule(float $latitude, float $longitude, float $accuracy): ?array
+    {
+        $rules = RoadRule::query()
+            ->with('segment:id,segment_name,boundary_coordinates')
+            ->where('is_active', true)
+            ->where('rule_type', 'speed_limit')
+            ->where(function ($query) {
+                $query->whereNull('effective_from')->orWhere('effective_from', '<=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('effective_to')->orWhere('effective_to', '>=', now());
+            })
+            ->get();
+
+        $bestMatch = null;
+        $tolerance = min(
+            self::MAX_SEGMENT_TOLERANCE_METERS,
+            max(self::BASE_SEGMENT_TOLERANCE_METERS, $accuracy + 20)
+        );
+
+        foreach ($rules as $rule) {
+            if (! $rule->segment) {
+                continue;
+            }
+
+            $speedLimit = $this->parseSpeedLimit($rule->rule_value);
+            if (! $speedLimit) {
+                continue;
+            }
+
+            $points = $this->segmentPoints($rule->segment->boundary_coordinates);
+            if (count($points) < 2) {
+                continue;
+            }
+
+            $distance = $this->distanceToPolylineMeters(['lat' => $latitude, 'lng' => $longitude], $points);
+            if ($distance > $tolerance) {
+                continue;
+            }
+
+            if (! $bestMatch || $distance < $bestMatch['distance_meters']) {
+                $bestMatch = [
+                    'rule' => $rule,
+                    'segment' => $rule->segment,
+                    'speed_limit_kmh' => $speedLimit,
+                    'distance_meters' => $distance,
+                ];
+            }
+        }
+
+        return $bestMatch;
+    }
+
+    private function parseSpeedLimit(?string $value): ?float
+    {
+        if (! $value || ! preg_match('/\d+(?:\.\d+)?/', $value, $matches)) {
+            return null;
+        }
+
+        $speedLimit = (float) $matches[0];
+
+        return $speedLimit > 0 ? $speedLimit : null;
+    }
+
+    private function segmentPoints(?array $geometry): array
+    {
+        $coordinates = data_get($geometry, 'geometry.coordinates', []);
+
+        if (! is_array($coordinates)) {
+            return [];
+        }
+
+        return collect($coordinates)
+            ->map(function ($coordinate) {
+                if (! is_array($coordinate) || count($coordinate) < 2) {
+                    return null;
+                }
+
+                return [
+                    'lat' => (float) $coordinate[1],
+                    'lng' => (float) $coordinate[0],
+                ];
+            })
+            ->filter(fn (?array $point): bool => $point !== null)
+            ->values()
+            ->all();
+    }
+
+    private function distanceToPolylineMeters(array $point, array $linePoints): float
+    {
+        $minimum = INF;
+
+        for ($index = 0; $index < count($linePoints) - 1; $index++) {
+            $minimum = min(
+                $minimum,
+                $this->distanceToSegmentMeters($point, $linePoints[$index], $linePoints[$index + 1])
+            );
+        }
+
+        return $minimum;
+    }
+
+    private function distanceToSegmentMeters(array $point, array $start, array $end): float
+    {
+        $metersPerDegreeLat = 111_320;
+        $metersPerDegreeLng = 111_320 * cos(deg2rad($point['lat']));
+
+        $px = $point['lng'] * $metersPerDegreeLng;
+        $py = $point['lat'] * $metersPerDegreeLat;
+        $sx = $start['lng'] * $metersPerDegreeLng;
+        $sy = $start['lat'] * $metersPerDegreeLat;
+        $ex = $end['lng'] * $metersPerDegreeLng;
+        $ey = $end['lat'] * $metersPerDegreeLat;
+
+        $dx = $ex - $sx;
+        $dy = $ey - $sy;
+
+        if (abs($dx) < 0.000001 && abs($dy) < 0.000001) {
+            return hypot($px - $sx, $py - $sy);
+        }
+
+        $t = max(0, min(1, (($px - $sx) * $dx + ($py - $sy) * $dy) / ($dx * $dx + $dy * $dy)));
+        $closestX = $sx + $t * $dx;
+        $closestY = $sy + $t * $dy;
+
+        return hypot($px - $closestX, $py - $closestY);
+    }
+
+    private function confidenceForDistance(float $distanceMeters): float
+    {
+        return round(max(55, min(99, 100 - $distanceMeters)), 2);
+    }
+
+    private function priorityForSpeed(float $speedKmh, float $limitKmh): string
+    {
+        $overBy = $speedKmh - $limitKmh;
+
+        if ($overBy >= 30) {
+            return 'high';
+        }
+
+        if ($overBy >= 15) {
+            return 'medium';
+        }
+
+        return 'normal';
+    }
+
+    private function makeReferenceNumber(): string
+    {
+        do {
+            $referenceNo = 'RPT-'.now()->format('Ymd').'-'.Str::upper(Str::random(6));
+        } while (Report::where('reference_no', $referenceNo)->exists());
+
+        return $referenceNo;
+    }
+
+    private function exceededSessionKey(int $ruleId): string
+    {
+        return "auto_speed.exceeded.{$ruleId}";
+    }
+
+    private function reportedSessionKey(int $ruleId): string
+    {
+        return "auto_speed.reported.{$ruleId}";
+    }
+
+    private function clearExceededSession(): void
+    {
+        foreach (array_keys(session()->all()) as $key) {
+            if (str_starts_with($key, 'auto_speed.exceeded.')) {
+                session()->forget($key);
+            }
+        }
+    }
+}

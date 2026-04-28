@@ -6,6 +6,7 @@
         duration: 1.05,
         easeLinearity: 0.25,
     };
+    const AUTO_EVALUATION_INTERVAL_MS = 4000;
 
     let mapInterface = null;
     let watchId = null;
@@ -20,6 +21,11 @@
     let speedValueEl = null;
     let speedStatusEl = null;
     let hasPublishedLocationReady = false;
+    let lastAutoEvaluationAt = 0;
+    let autoEvaluationInFlight = false;
+    let autoReportInFlight = false;
+    let lastAutoTelemetry = null;
+    const reportedRuleIds = new Set();
 
     function cacheSpeedWidget() {
         if (speedWidget) return;
@@ -79,6 +85,156 @@
                 speedKmh,
             },
         }));
+    }
+
+    function getAutoReportingConfig() {
+        const config = window.rsrsAutoSpeedReporting || {};
+
+        if (!config.evaluateUrl || !config.storeUrl || !config.csrfToken) {
+            return null;
+        }
+
+        return config;
+    }
+
+    async function postAutoJson(url, payload, csrfToken) {
+        const response = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+            const error = new Error(data.message || 'Automatic reporting request failed.');
+            error.response = data;
+            error.status = response.status;
+            throw error;
+        }
+
+        return data;
+    }
+
+    function buildAutoTelemetry(position, speedKmh) {
+        const latitude = Number(position.coords.latitude);
+        const longitude = Number(position.coords.longitude);
+        const accuracy = Number(position.coords.accuracy);
+        const heading = Number(position.coords.heading);
+
+        return {
+            latitude,
+            longitude,
+            speed_kmh: Number.isFinite(speedKmh) ? Math.max(0, speedKmh) : 0,
+            accuracy: Number.isFinite(accuracy) ? accuracy : null,
+            heading: Number.isFinite(heading) && heading >= 0 ? heading : null,
+        };
+    }
+
+    function resetReportedRuleIfSafe(evaluation) {
+        if (!evaluation?.matched || !evaluation?.rule?.id || evaluation.exceeded) return;
+        reportedRuleIds.delete(Number(evaluation.rule.id));
+    }
+
+    async function submitAutoReport(evaluation, telemetry) {
+        const config = getAutoReportingConfig();
+        const ruleId = Number(evaluation?.rule?.id);
+        const segmentId = Number(evaluation?.segment?.id);
+
+        if (!config || !ruleId || !segmentId || autoReportInFlight || reportedRuleIds.has(ruleId)) {
+            return;
+        }
+
+        autoReportInFlight = true;
+
+        try {
+            const result = await postAutoJson(config.storeUrl, {
+                ...telemetry,
+                rule_id: ruleId,
+                segment_id: segmentId,
+            }, config.csrfToken);
+
+            reportedRuleIds.add(ruleId);
+            const reference = result.reference_no ? `: ${result.reference_no}` : '';
+            updateSpeedDisplay(telemetry.speed_kmh, result.duplicate ? 'Automatic report already submitted' : `Automatic report submitted${reference}`, true);
+        } catch (error) {
+            const response = error.response || {};
+
+            if (response.reason === 'duration_pending' && Number.isFinite(Number(response.exceeded_seconds))) {
+                updateSpeedDisplay(telemetry.speed_kmh, `Speed limit exceeded for ${Math.round(Number(response.exceeded_seconds))}s`, true);
+            } else if (response.reason === 'speed_within_limit') {
+                updateSpeedDisplay(telemetry.speed_kmh, 'Speed is back within the saved limit', telemetry.speed_kmh >= 1);
+            } else if (error.status !== 422) {
+                updateSpeedDisplay(telemetry.speed_kmh, 'Automatic reporting unavailable right now', telemetry.speed_kmh >= 1);
+            }
+        } finally {
+            autoReportInFlight = false;
+        }
+    }
+
+    function handleAutoEvaluation(evaluation, telemetry) {
+        resetReportedRuleIfSafe(evaluation);
+
+        if (!evaluation?.matched) {
+            if (telemetry.speed_kmh >= 1) {
+                updateSpeedDisplay(telemetry.speed_kmh, 'No monitored speed rule nearby', true);
+            }
+            return;
+        }
+
+        const limit = Number(evaluation.speed_limit_kmh);
+        const limitText = Number.isFinite(limit) ? `${Math.round(limit)} km/h` : 'saved limit';
+
+        if (!evaluation.exceeded) {
+            updateSpeedDisplay(telemetry.speed_kmh, `Speed limit ${limitText} active`, telemetry.speed_kmh >= 1);
+            return;
+        }
+
+        const exceededSeconds = Math.max(0, Number(evaluation.exceeded_seconds) || 0);
+        const requiredSeconds = Math.max(30, Number(evaluation.required_seconds) || 30);
+        const remainingSeconds = Math.max(0, requiredSeconds - exceededSeconds);
+
+        if (remainingSeconds > 0) {
+            updateSpeedDisplay(telemetry.speed_kmh, `Limit ${limitText} exceeded for ${Math.round(exceededSeconds)}s`, true);
+            return;
+        }
+
+        updateSpeedDisplay(telemetry.speed_kmh, 'Submitting automatic speed report...', true);
+        submitAutoReport(evaluation, telemetry);
+    }
+
+    function evaluateAutoReporting(position, speedKmh, now) {
+        const config = getAutoReportingConfig();
+
+        if (!config || autoEvaluationInFlight || now - lastAutoEvaluationAt < AUTO_EVALUATION_INTERVAL_MS) {
+            return;
+        }
+
+        const telemetry = buildAutoTelemetry(position, speedKmh);
+        if (!Number.isFinite(telemetry.latitude) || !Number.isFinite(telemetry.longitude)) {
+            return;
+        }
+
+        lastAutoTelemetry = telemetry;
+        lastAutoEvaluationAt = now;
+        autoEvaluationInFlight = true;
+
+        postAutoJson(config.evaluateUrl, telemetry, config.csrfToken)
+            .then((evaluation) => handleAutoEvaluation(evaluation, lastAutoTelemetry || telemetry))
+            .catch((error) => {
+                if (error.status !== 422 && speedKmh >= 1) {
+                    updateSpeedDisplay(speedKmh, 'Automatic reporting check failed', true);
+                }
+            })
+            .finally(() => {
+                autoEvaluationInFlight = false;
+            });
     }
 
     function setLocationButtonMode(mode) {
@@ -228,6 +384,7 @@
         setLocatingState(false);
         updateSpeedDisplay(speedKmh, isMoving ? 'Live movement detected' : 'You look stationary', isMoving);
         publishLocationReady(position, speedKmh);
+        evaluateAutoReporting(position, speedKmh, now);
 
         if (zoomToUserOnNextFix) {
             flyToUser(latitude, longitude, locationViewMode);
