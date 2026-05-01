@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\officer;
 
 use App\Http\Controllers\Controller;
-use App\Models\EvidenceFile;
 use App\Models\Hotspot;
 use App\Models\Officer;
 use App\Models\Report;
@@ -50,11 +49,6 @@ class OfficerDashboardController extends Controller
                 'label' => 'Hotspots',
                 'value' => Hotspot::count(),
                 'icon' => 'bi-geo-alt',
-            ],
-            [
-                'label' => 'Evidence Files',
-                'value' => EvidenceFile::count(),
-                'icon' => 'bi-paperclip',
             ],
             [
                 'label' => 'Rule Matches',

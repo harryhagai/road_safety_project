@@ -40,10 +40,6 @@
                 'title' => 'Violation Types',
                 'subtitle' => 'Manage report categories used for road incidents and traffic violations.',
             ],
-            request()->is('road-officer/evidence-files*') || request()->is('student-reports/class*') => [
-                'title' => 'Evidence Files',
-                'subtitle' => 'Browse attachments, media records, and supporting files linked to reports.',
-            ],
             request()->is('road-officer/rule-violations*') || request()->is('student-reports/single-exam*') => [
                 'title' => 'Rule Violations',
                 'subtitle' => 'Match reports to rules, review verification status, and confirm enforcement actions.',
