@@ -15,8 +15,8 @@ class AutoSpeedReportController extends Controller
 {
     private const REQUIRED_EXCEEDED_SECONDS = 30;
     private const DUPLICATE_WINDOW_SECONDS = 600;
-    private const BASE_SEGMENT_TOLERANCE_METERS = 45;
-    private const MAX_SEGMENT_TOLERANCE_METERS = 120;
+    private const BASE_SEGMENT_TOLERANCE_METERS = 80;
+    private const MAX_SEGMENT_TOLERANCE_METERS = 350;
 
     public function evaluate(Request $request): JsonResponse
     {
@@ -207,9 +207,10 @@ class AutoSpeedReportController extends Controller
             ->get();
 
         $bestMatch = null;
+        $nearestMatch = null;
         $tolerance = min(
             self::MAX_SEGMENT_TOLERANCE_METERS,
-            max(self::BASE_SEGMENT_TOLERANCE_METERS, $accuracy + 20)
+            max(self::BASE_SEGMENT_TOLERANCE_METERS, $accuracy + 80)
         );
 
         foreach ($rules as $rule) {
@@ -224,10 +225,24 @@ class AutoSpeedReportController extends Controller
 
             $points = $this->segmentPoints($rule->segment->boundary_coordinates);
             if (count($points) < 2) {
+                $points = $this->ruleEndpointPoints($rule);
+            }
+
+            if (count($points) < 2) {
                 continue;
             }
 
             $distance = $this->distanceToPolylineMeters(['lat' => $latitude, 'lng' => $longitude], $points);
+
+            if (! $nearestMatch || $distance < $nearestMatch['distance_meters']) {
+                $nearestMatch = [
+                    'rule' => $rule,
+                    'segment' => $rule->segment,
+                    'speed_limit_kmh' => $speedLimit,
+                    'distance_meters' => $distance,
+                ];
+            }
+
             if ($distance > $tolerance) {
                 continue;
             }
@@ -242,7 +257,11 @@ class AutoSpeedReportController extends Controller
             }
         }
 
-        return $bestMatch;
+        return $bestMatch ?: (
+            $nearestMatch && $nearestMatch['distance_meters'] <= self::MAX_SEGMENT_TOLERANCE_METERS
+                ? $nearestMatch
+                : null
+        );
     }
 
     private function parseSpeedLimit(?string $value): ?float
@@ -258,7 +277,7 @@ class AutoSpeedReportController extends Controller
 
     private function segmentPoints(?array $geometry): array
     {
-        $coordinates = data_get($geometry, 'geometry.coordinates', []);
+        $coordinates = $this->extractCoordinates($geometry);
 
         if (! is_array($coordinates)) {
             return [];
@@ -266,15 +285,91 @@ class AutoSpeedReportController extends Controller
 
         return collect($coordinates)
             ->map(function ($coordinate) {
-                if (! is_array($coordinate) || count($coordinate) < 2) {
-                    return null;
-                }
-
-                return [
-                    'lat' => (float) $coordinate[1],
-                    'lng' => (float) $coordinate[0],
-                ];
+                return $this->normalizeCoordinate($coordinate);
             })
+            ->filter(fn (?array $point): bool => $point !== null)
+            ->values()
+            ->all();
+    }
+
+    private function extractCoordinates(?array $geometry): array
+    {
+        if (! is_array($geometry)) {
+            return [];
+        }
+
+        $coordinates = data_get($geometry, 'geometry.coordinates');
+
+        if (is_array($coordinates)) {
+            return $coordinates;
+        }
+
+        $coordinates = data_get($geometry, 'features.0.geometry.coordinates');
+
+        if (is_array($coordinates)) {
+            return $coordinates;
+        }
+
+        $coordinates = data_get($geometry, 'coordinates');
+
+        if (is_array($coordinates)) {
+            return $coordinates;
+        }
+
+        return $geometry;
+    }
+
+    private function normalizeCoordinate(mixed $coordinate): ?array
+    {
+        if (! is_array($coordinate)) {
+            return null;
+        }
+
+        if (isset($coordinate['lat'], $coordinate['lng'])) {
+            return $this->validPoint((float) $coordinate['lat'], (float) $coordinate['lng']);
+        }
+
+        if (isset($coordinate['latitude'], $coordinate['longitude'])) {
+            return $this->validPoint((float) $coordinate['latitude'], (float) $coordinate['longitude']);
+        }
+
+        if (count($coordinate) < 2) {
+            return null;
+        }
+
+        $first = (float) $coordinate[0];
+        $second = (float) $coordinate[1];
+
+        // GeoJSON stores [lng, lat], but some map payloads arrive as [lat, lng].
+        if (abs($first) <= 20 && abs($second) > 20) {
+            return $this->validPoint($first, $second);
+        }
+
+        return $this->validPoint($second, $first);
+    }
+
+    private function validPoint(float $latitude, float $longitude): ?array
+    {
+        if ($latitude < -90 || $latitude > 90 || $longitude < -180 || $longitude > 180) {
+            return null;
+        }
+
+        return [
+            'lat' => $latitude,
+            'lng' => $longitude,
+        ];
+    }
+
+    private function ruleEndpointPoints(RoadRule $rule): array
+    {
+        $start = is_numeric($rule->latitude_start) && is_numeric($rule->longitude_start)
+            ? $this->validPoint((float) $rule->latitude_start, (float) $rule->longitude_start)
+            : null;
+        $end = is_numeric($rule->latitude_end) && is_numeric($rule->longitude_end)
+            ? $this->validPoint((float) $rule->latitude_end, (float) $rule->longitude_end)
+            : null;
+
+        return collect([$start, $end])
             ->filter(fn (?array $point): bool => $point !== null)
             ->values()
             ->all();
