@@ -20,6 +20,13 @@
     let speedWidget = null;
     let speedValueEl = null;
     let speedStatusEl = null;
+    let speedAlertEl = null;
+    let speedAlertIconEl = null;
+    let speedAlertLabelEl = null;
+    let speedAlertMessageEl = null;
+    let speedAlertLocationEl = null;
+    let speedAlertLimitEl = null;
+    let speedAlertCountdownEl = null;
     let hasPublishedLocationReady = false;
     let lastAutoEvaluationAt = 0;
     let autoEvaluationInFlight = false;
@@ -33,6 +40,13 @@
         speedWidget = document.querySelector('[data-home-speed-widget]');
         speedValueEl = document.querySelector('[data-home-speed-value]');
         speedStatusEl = document.querySelector('[data-home-speed-status]');
+        speedAlertEl = document.querySelector('[data-home-speed-alert]');
+        speedAlertIconEl = document.querySelector('[data-home-speed-alert-icon]');
+        speedAlertLabelEl = document.querySelector('[data-home-speed-alert-label]');
+        speedAlertMessageEl = document.querySelector('[data-home-speed-alert-message]');
+        speedAlertLocationEl = document.querySelector('[data-home-speed-alert-location]');
+        speedAlertLimitEl = document.querySelector('[data-home-speed-alert-limit]');
+        speedAlertCountdownEl = document.querySelector('[data-home-speed-alert-countdown]');
     }
 
     function updateSpeedDisplay(speedKmh, statusText, isLive) {
@@ -46,6 +60,44 @@
         speedWidget.style.setProperty('--home-speed-ring-duration', `${ringDuration.toFixed(2)}s`);
         speedWidget.classList.toggle('is-live', Boolean(isLive));
         speedWidget.classList.toggle('is-idle', !isLive);
+    }
+
+    function updateSpeedAlert(options) {
+        cacheSpeedWidget();
+        if (!speedAlertEl || !speedAlertIconEl || !speedAlertLabelEl || !speedAlertMessageEl) return;
+
+        const state = options?.state || 'idle';
+        const icons = {
+            idle: 'bi-info-circle-fill',
+            info: 'bi-info-circle-fill',
+            warning: 'bi-exclamation-triangle-fill',
+            danger: 'bi-shield-exclamation',
+            success: 'bi-check-circle-fill',
+        };
+
+        speedAlertEl.classList.remove(
+            'home-speed-alert--idle',
+            'home-speed-alert--info',
+            'home-speed-alert--warning',
+            'home-speed-alert--danger',
+            'home-speed-alert--success'
+        );
+        speedAlertEl.classList.add(`home-speed-alert--${state}`);
+        speedAlertIconEl.innerHTML = `<i class="bi ${icons[state] || icons.info}" aria-hidden="true"></i>`;
+        speedAlertLabelEl.textContent = options?.label || 'Speed info';
+        speedAlertMessageEl.textContent = options?.message || 'Tunatafuta location yako na speed rule iliyo karibu.';
+
+        if (speedAlertLocationEl) {
+            speedAlertLocationEl.textContent = `Location: ${options?.location || 'waiting...'}`;
+        }
+
+        if (speedAlertLimitEl) {
+            speedAlertLimitEl.textContent = `Limit: ${options?.limit || 'unknown'}`;
+        }
+
+        if (speedAlertCountdownEl) {
+            speedAlertCountdownEl.textContent = `Report: ${options?.countdown || 'inactive'}`;
+        }
     }
 
     function resolveSpeedKmh(position, now, currentPoint) {
@@ -163,6 +215,16 @@
             reportedRuleIds.add(ruleId);
             const reference = result.reference_no ? `: ${result.reference_no}` : '';
             updateSpeedDisplay(telemetry.speed_kmh, result.duplicate ? 'Automatic report already submitted' : `Automatic report submitted${reference}`, true);
+            updateSpeedAlert({
+                state: 'danger',
+                label: result.duplicate ? 'Report tayari imetumwa' : 'Speed violation imeripotiwa',
+                message: result.duplicate
+                    ? 'Speed yako bado ipo juu ya limit na report ya eneo hili tayari ipo kwenye mfumo.'
+                    : `Auto report imetumwa kwa sababu speed haijashuka ndani ya sekunde 30${reference}.`,
+                location: evaluation?.segment?.name || 'matched road segment',
+                limit: `${Math.round(Number(evaluation.speed_limit_kmh))} km/h`,
+                countdown: 'submitted',
+            });
         } catch (error) {
             const response = error.response || {};
 
@@ -185,14 +247,31 @@
             if (telemetry.speed_kmh >= 1) {
                 updateSpeedDisplay(telemetry.speed_kmh, 'No monitored speed rule nearby', true);
             }
+            updateSpeedAlert({
+                state: 'idle',
+                label: 'Hakuna speed rule karibu',
+                message: 'Location yako haijalingana na road segment yenye speed limit kwenye database.',
+                location: 'not matched',
+                limit: 'unknown',
+                countdown: 'inactive',
+            });
             return;
         }
 
         const limit = Number(evaluation.speed_limit_kmh);
         const limitText = Number.isFinite(limit) ? `${Math.round(limit)} km/h` : 'saved limit';
+        const segmentName = evaluation.segment?.name || 'matched road segment';
 
         if (!evaluation.exceeded) {
             updateSpeedDisplay(telemetry.speed_kmh, `Speed limit ${limitText} active`, telemetry.speed_kmh >= 1);
+            updateSpeedAlert({
+                state: 'info',
+                label: 'Speed iko sawa',
+                message: `Speed yako haivunji sheria za eneo hili. Inatakiwa usizidi ${limitText}.`,
+                location: segmentName,
+                limit: limitText,
+                countdown: 'inactive',
+            });
             return;
         }
 
@@ -202,10 +281,26 @@
 
         if (remainingSeconds > 0) {
             updateSpeedDisplay(telemetry.speed_kmh, `Limit ${limitText} exceeded for ${Math.round(exceededSeconds)}s`, true);
+            updateSpeedAlert({
+                state: 'warning',
+                label: 'Warning: umepitiliza speed',
+                message: `Punguza speed mpaka ${limitText}. Ukibaki juu ya limit, mfumo utatuma auto report.`,
+                location: segmentName,
+                limit: limitText,
+                countdown: `${Math.ceil(remainingSeconds)}s remaining`,
+            });
             return;
         }
 
         updateSpeedDisplay(telemetry.speed_kmh, 'Submitting automatic speed report...', true);
+        updateSpeedAlert({
+            state: 'danger',
+            label: 'Danger: auto report inaanza',
+            message: `Speed yako imekaa juu ya ${limitText} kwa sekunde 30. Mfumo unatuma speed violation report.`,
+            location: segmentName,
+            limit: limitText,
+            countdown: 'submitting',
+        });
         submitAutoReport(evaluation, telemetry);
     }
 
@@ -429,6 +524,14 @@
 
         setLocatingState(true);
         updateSpeedDisplay(0, 'Checking GPS speed...', false);
+        updateSpeedAlert({
+            state: 'idle',
+            label: 'Inasoma location',
+            message: 'Ruhusu GPS ili mfumo ulinganishe coordinates zako na speed limit ya database.',
+            location: 'checking GPS...',
+            limit: 'unknown',
+            countdown: 'inactive',
+        });
 
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -444,6 +547,14 @@
                     () => {
                         setLocatingState(false);
                         updateSpeedDisplay(0, 'Speed unavailable right now', false);
+                        updateSpeedAlert({
+                            state: 'warning',
+                            label: 'Location haipatikani',
+                            message: 'GPS haijapatikana, hivyo speed rule na auto reporting haziwezi kufanya kazi sasa.',
+                            location: 'unavailable',
+                            limit: 'unknown',
+                            countdown: 'inactive',
+                        });
                         startWatch(false);
                     },
                     { enableHighAccuracy: false, timeout: 8000, maximumAge: 15000 }
@@ -458,6 +569,14 @@
         if (!mapEl) return;
         cacheSpeedWidget();
         updateSpeedDisplay(0, 'Waiting for movement...', false);
+        updateSpeedAlert({
+            state: 'idle',
+            label: 'Speed info',
+            message: 'Tunatafuta location yako na speed rule iliyo karibu.',
+            location: 'waiting...',
+            limit: 'unknown',
+            countdown: 'inactive',
+        });
 
         const wireUp = () => {
             if (!mapEl.mapApi) return;

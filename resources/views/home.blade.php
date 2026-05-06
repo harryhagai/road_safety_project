@@ -49,6 +49,22 @@
                             </div>
                             <small data-home-speed-status>Waiting for movement...</small>
                         </div>
+                        <div class="home-speed-alert home-speed-alert--idle" data-home-speed-alert aria-live="polite">
+                            <div class="home-speed-alert__icon" data-home-speed-alert-icon>
+                                <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+                            </div>
+                            <div class="home-speed-alert__body">
+                                <div class="home-speed-alert__label" data-home-speed-alert-label>Speed info</div>
+                                <div class="home-speed-alert__message" data-home-speed-alert-message>
+                                    Tunatafuta location yako na speed rule iliyo karibu.
+                                </div>
+                                <div class="home-speed-alert__meta">
+                                    <span data-home-speed-alert-location>Location: waiting...</span>
+                                    <span data-home-speed-alert-limit>Limit: unknown</span>
+                                    <span data-home-speed-alert-countdown>Report: inactive</span>
+                                </div>
+                            </div>
+                        </div>
                         <x-map.canvas id="mainPublicMap" :config="$mapConfig" height="100%" :show-toolbar="false" mode="viewer" />
                     </div>
                 </section>
